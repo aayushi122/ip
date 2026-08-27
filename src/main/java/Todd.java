@@ -9,8 +9,7 @@ public class Todd {
                 + "   / / / __ \\/ __  / __  / \n"
                 + "  / / / /_/ / /_/ / /_/ /  \n"
                 + " /_/  \\____/\\__,_/\\__,_/   \n";
-        ArrayList<String> list = new ArrayList<>();
-        ArrayList<Boolean> done = new ArrayList<>();
+        ArrayList<Task> list = new ArrayList<>();
 
         System.out.println(banner);
         System.out.println("Hello There! I'm Todd, a NPC Chatbot :P\nWhat can I do for you today?");
@@ -27,8 +26,8 @@ public class Todd {
                 System.out.println(line);
                 System.out.println("\t Here are the tasks in your list:");
                 for (int i = 0; i < list.size(); i++) {
-                    String status = done.get(i) ? "X" : " ";
-                    System.out.println("\t  " + (i + 1) + ". [" + status + "] " + list.get(i));
+                    Task t = list.get(i);
+                    System.out.println("\t  " + (i + 1) + ". [" + t.getStatusIcon() + "] " + t.getDescription());
                 }
                 System.out.println(line);
                 txt = sc.nextLine();
@@ -49,12 +48,12 @@ public class Todd {
                     int index = Integer.parseInt(numberPart) - 1;
                     if (index < 0 || index >= list.size()) {
                         System.out.println("\t That task number doesn't exist!");
-                    } else if (done.get(index)) {
+                    } else if (list.get(index).isDone()) {
                         System.out.println("\t That task is already marked.");
                     } else {
-                        done.set(index, true);
+                        list.get(index).markAsDone();
                         System.out.println("\t Hooray! You are on fire! Task crossed off.");
-                        System.out.println("\t    [X] " + list.get(index));
+                        System.out.println("\t    [X] " + list.get(index).getDescription());
                     }
                 }
                 System.out.println(line);
@@ -76,12 +75,12 @@ public class Todd {
                     int index = Integer.parseInt(numberPart) - 1;
                     if (index < 0 || index >= list.size()) {
                         System.out.println("\t That task number doesn't exist!");
-                    } else if (!done.get(index)) {
+                    } else if (!list.get(index).isDone()) {
                         System.out.println("\t That task is already unmarked.");
                     } else {
-                        done.set(index, false);
+                        list.get(index).markAsUndone();
                         System.out.println("\t Oh no! Okay unmarked.");
-                        System.out.println("\t    [ ] " + list.get(index));
+                        System.out.println("\t    [ ] " + list.get(index).getDescription());
                     }
                 }
                 System.out.println(line);
@@ -89,8 +88,7 @@ public class Todd {
 
             } else {
                 System.out.println(line);
-                list.add(txt);
-                done.add(false);
+                list.add(new Task(txt));
                 System.out.println("\t added: " + txt);
                 System.out.println(line);
                 txt = sc.nextLine();
