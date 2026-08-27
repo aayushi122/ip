@@ -49,10 +49,39 @@ public class Todd {
                     int index = Integer.parseInt(numberPart) - 1;
                     if (index < 0 || index >= list.size()) {
                         System.out.println("\t That task number doesn't exist!");
+                    } else if (done.get(index)) {
+                        System.out.println("\t That task is already marked.");
                     } else {
                         done.set(index, true);
                         System.out.println("\t Hooray! You are on fire! Task crossed off.");
                         System.out.println("\t    [X] " + list.get(index));
+                    }
+                }
+                System.out.println(line);
+                txt = sc.nextLine();
+
+            } else if (txt.startsWith("unmark ")) {
+                String numberPart = txt.substring(7);
+                boolean isValidNumber = !numberPart.isEmpty();
+                for (int i = 0; i < numberPart.length(); i++) {
+                    if (!Character.isDigit(numberPart.charAt(i))) {
+                        isValidNumber = false;
+                    }
+                }
+
+                System.out.println(line);
+                if (!isValidNumber) {
+                    System.out.println("\t Enter the task number pls");
+                } else {
+                    int index = Integer.parseInt(numberPart) - 1;
+                    if (index < 0 || index >= list.size()) {
+                        System.out.println("\t That task number doesn't exist!");
+                    } else if (!done.get(index)) {
+                        System.out.println("\t That task is already unmarked.");
+                    } else {
+                        done.set(index, false);
+                        System.out.println("\t Oh no! Okay unmarked.");
+                        System.out.println("\t    [ ] " + list.get(index));
                     }
                 }
                 System.out.println(line);
