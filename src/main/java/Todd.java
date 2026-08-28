@@ -106,6 +106,16 @@ public class Todd {
                     list.add(newTask);
                     printAdded(line, newTask, list.size());
 
+
+                } else if (txt.startsWith("delete")) {
+                    int index = parseIndex(txt, "delete", list.size());
+                    Task removed = list.remove(index);
+                    System.out.println(line);
+                    System.out.println("\t Noted. I've removed this task:");
+                    System.out.println("\t   " + removed);
+                    System.out.println("\t Now you have " + list.size() + " tasks in the list.");
+                    System.out.println(line);
+
                 } else {
                     throw new TodException("What does that mean dawg");
                 }
@@ -129,11 +139,11 @@ public class Todd {
             }
         }
         if (!isValidNumber) {
-            throw new TodException("OOPS!!! Please provide a valid task number to " + command + ".");
+            throw new TodException("Brother you didnt give me a valid task number to " + command + ".");
         }
         int index = Integer.parseInt(numberPart) - 1;
         if (index < 0 || index >= listSize) {
-            throw new TodException("OOPS!!! That task number doesn't exist!");
+            throw new TodException("Am I tripping cuz that task number literally doesn't exist!");
         }
         return index;
     }
