@@ -19,105 +19,133 @@ public class Todd {
 
         while (true) {
             try {
-                if (txt.equals("bye")) {
-                    System.out.println("Noo don't go, come back. Ok fine bye. See you soon.");
-                    return;
+                String commandWord = txt.split(" ")[0];
+                Command command;
+                switch (commandWord) {
+                    case "bye": command = Command.BYE; break;
+                    case "list": command = Command.LIST; break;
+                    case "mark": command = Command.MARK; break;
+                    case "unmark": command = Command.UNMARK; break;
+                    case "todo": command = Command.TODO; break;
+                    case "deadline": command = Command.DEADLINE; break;
+                    case "event": command = Command.EVENT; break;
+                    case "delete": command = Command.DELETE; break;
+                    default: command = Command.UNKNOWN;
+                }
 
-                } else if (txt.equals("list")) {
-                    System.out.println(line);
-                    if (list.isEmpty()) {
-                        System.out.println("\t Your list is empty! Add some tasks first.");
-                    } else {
-                        System.out.println("\t Here are the tasks in your list:");
-                        for (int i = 0; i < list.size(); i++) {
-                            System.out.println("\t  " + (i + 1) + "." + list.get(i));
+                switch (command) {
+                    case BYE:
+                        System.out.println("Noo don't go, come back. Ok fine bye. See you soon.");
+                        return;
+
+                    case LIST:
+                        System.out.println(line);
+                        if (list.isEmpty()) {
+                            System.out.println("\t Your list is empty! Add some tasks first.");
+                        } else {
+                            System.out.println("\t Here are the tasks in your list:");
+                            for (int i = 0; i < list.size(); i++) {
+                                System.out.println("\t  " + (i + 1) + "." + list.get(i));
+                            }
                         }
-                    }
-                    System.out.println(line);
+                        System.out.println(line);
+                        break;
 
-                } else if (txt.startsWith("mark")) {
-                    int index = parseIndex(txt, "mark", list.size());
-                    if (list.get(index).isDone()) {
-                        throw new TodException("That task is already marked.");
+                    case MARK: {
+                        int index = parseIndex(txt, "mark", list.size());
+                        if (list.get(index).isDone()) {
+                            throw new TodException("That task is already marked.");
+                        }
+                        list.get(index).markAsDone();
+                        System.out.println(line);
+                        System.out.println("\t Hooray! You are on fire! Task crossed off.");
+                        System.out.println("\t    " + list.get(index));
+                        System.out.println(line);
+                        break;
                     }
-                    list.get(index).markAsDone();
-                    System.out.println(line);
-                    System.out.println("\t Hooray! You are on fire! Task crossed off.");
-                    System.out.println("\t    " + list.get(index));
-                    System.out.println(line);
 
-                } else if (txt.startsWith("unmark")) {
-                    int index = parseIndex(txt, "unmark", list.size());
-                    if (!list.get(index).isDone()) {
-                        throw new TodException("That task is already unmarked.");
+                    case UNMARK: {
+                        int index = parseIndex(txt, "unmark", list.size());
+                        if (!list.get(index).isDone()) {
+                            throw new TodException("That task is already unmarked.");
+                        }
+                        list.get(index).markAsUndone();
+                        System.out.println(line);
+                        System.out.println("\t Oh no! Okay unmarked.");
+                        System.out.println("\t    " + list.get(index));
+                        System.out.println(line);
+                        break;
                     }
-                    list.get(index).markAsUndone();
-                    System.out.println(line);
-                    System.out.println("\t Oh no! Okay unmarked.");
-                    System.out.println("\t    " + list.get(index));
-                    System.out.println(line);
 
-                } else if (txt.equals("todo") || txt.startsWith("todo ")) {
-                    String description = txt.length() > 4 ? txt.substring(5).trim() : "";
-                    if (description.isEmpty()) {
-                        throw new TodException("Wait you didn't even tell me what is the to-do");
+                    case TODO: {
+                        String description = txt.length() > 4 ? txt.substring(5).trim() : "";
+                        if (description.isEmpty()) {
+                            throw new TodException("Wait you didn't even tell me what is the to-do");
+                        }
+                        Task newTask = new Todo(description);
+                        list.add(newTask);
+                        printAdded(line, newTask, list.size());
+                        break;
                     }
-                    Task newTask = new Todo(description);
-                    list.add(newTask);
-                    printAdded(line, newTask, list.size());
 
-                } else if (txt.equals("deadline") || txt.startsWith("deadline ")) {
-                    String rest = txt.length() > 8 ? txt.substring(9).trim() : "";
-                    if (rest.isEmpty()) {
-                        throw new TodException("Wait you didn't even tell me anything about this deadline");
+                    case DEADLINE: {
+                        String rest = txt.length() > 8 ? txt.substring(9).trim() : "";
+                        if (rest.isEmpty()) {
+                            throw new TodException("Wait you didn't even tell me anything about this deadline");
+                        }
+                        String[] parts = rest.split(" /by ", 2);
+                        String description = parts[0].trim();
+                        if (description.isEmpty()) {
+                            throw new TodException("Try Again! The description is literally empty.");
+                        }
+                        if (parts.length < 2 || parts[1].trim().isEmpty()) {
+                            throw new TodException("Try Again! There is no /by date or time.");
+                        }
+                        Task newTask = new Deadline(description, parts[1].trim());
+                        list.add(newTask);
+                        printAdded(line, newTask, list.size());
+                        break;
                     }
-                    String[] parts = rest.split(" /by ", 2);
-                    String description = parts[0].trim();
-                    if (description.isEmpty()) {
-                        throw new TodException("Try Again! The description is literally empty.");
-                    }
-                    if (parts.length < 2 || parts[1].trim().isEmpty()) {
-                        throw new TodException("Try Again! There is no /by date or time.");
-                    }
-                    Task newTask = new Deadline(description, parts[1].trim());
-                    list.add(newTask);
-                    printAdded(line, newTask, list.size());
 
-                } else if (txt.equals("event") || txt.startsWith("event ")) {
-                    String rest = txt.length() > 5 ? txt.substring(6).trim() : "";
-                    if (rest.isEmpty()) {
-                        throw new TodException("Wait you didn't even tell me anything about this event");
+                    case EVENT: {
+                        String rest = txt.length() > 5 ? txt.substring(6).trim() : "";
+                        if (rest.isEmpty()) {
+                            throw new TodException("Wait you didn't even tell me anything about this event");
+                        }
+                        String[] fromSplit = rest.split(" /from ", 2);
+                        String description = fromSplit[0].trim();
+                        if (description.isEmpty()) {
+                            throw new TodException("Try Again! The description is literally empty.");
+                        }
+                        if (fromSplit.length < 2 || fromSplit[1].trim().isEmpty()) {
+                            throw new TodException("Try Again! There is no /from time.");
+                        }
+                        String[] toSplit = fromSplit[1].split(" /to ", 2);
+                        String from = toSplit[0].trim();
+                        if (toSplit.length < 2 || toSplit[1].trim().isEmpty()) {
+                            throw new TodException("Try Again! There is no /to time.");
+                        }
+                        String to = toSplit[1].trim();
+                        Task newTask = new Event(description, from, to);
+                        list.add(newTask);
+                        printAdded(line, newTask, list.size());
+                        break;
                     }
-                    String[] fromSplit = rest.split(" /from ", 2);
-                    String description = fromSplit[0].trim();
-                    if (description.isEmpty()) {
-                        throw new TodException("Try Again! The description is literally empty.");
-                    }
-                    if (fromSplit.length < 2 || fromSplit[1].trim().isEmpty()) {
-                        throw new TodException("Try Again! There is no /from time.");
-                    }
-                    String[] toSplit = fromSplit[1].split(" /to ", 2);
-                    String from = toSplit[0].trim();
-                    if (toSplit.length < 2 || toSplit[1].trim().isEmpty()) {
-                        throw new TodException("Try Again! There is no /to time.");
-                    }
-                    String to = toSplit[1].trim();
-                    Task newTask = new Event(description, from, to);
-                    list.add(newTask);
-                    printAdded(line, newTask, list.size());
 
+                    case DELETE: {
+                        int index = parseIndex(txt, "delete", list.size());
+                        Task removed = list.remove(index);
+                        System.out.println(line);
+                        System.out.println("\t Noted. I've removed this task:");
+                        System.out.println("\t   " + removed);
+                        System.out.println("\t Now you have " + list.size() + " tasks in the list.");
+                        System.out.println(line);
+                        break;
+                    }
 
-                } else if (txt.startsWith("delete")) {
-                    int index = parseIndex(txt, "delete", list.size());
-                    Task removed = list.remove(index);
-                    System.out.println(line);
-                    System.out.println("\t Noted. I've removed this task:");
-                    System.out.println("\t   " + removed);
-                    System.out.println("\t Now you have " + list.size() + " tasks in the list.");
-                    System.out.println(line);
-
-                } else {
-                    throw new TodException("What does that mean dawg");
+                    case UNKNOWN:
+                    default:
+                        throw new TodException("What does that mean dawg");
                 }
 
             } catch (TodException e) {
