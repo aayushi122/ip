@@ -1,0 +1,130 @@
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+/** Loads and saves Todd's task list using a text file on the hard disk. */
+public class Storage {
+    private static final String SEPARATOR = " | ";
+
+    private final Path filePath;
+
+    public Storage(Path filePath) {
+        this.filePath = filePath;
+    }
+
+    /**
+     * Loads saved tasks, creating the data folder when Todd is run for the first time.
+     *
+     * @return tasks reconstructed from the save file, or an empty list if no save file exists
+     * @throws TodException if the file cannot be read or contains invalid task data
+     */
+    public ArrayList<Task> load() throws TodException {
+        try {
+            createParentDirectory();
+            if (!Files.exists(filePath)) {
+                return new ArrayList<>();
+            }
+
+            ArrayList<Task> tasks = new ArrayList<>();
+            List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
+            for (int i = 0; i < lines.size(); i++) {
+                String line = lines.get(i);
+                if (!line.isBlank()) {
+                    tasks.add(parseTask(line, i + 1));
+                }
+            }
+            return tasks;
+        } catch (IOException e) {
+            throw new TodException("I couldn't load tasks from " + filePath + ".");
+        }
+    }
+
+    /**
+     * Replaces the save file with the current task list.
+     *
+     * @param tasks current tasks to store
+     * @throws TodException if the tasks cannot be written to disk
+     */
+    public void save(List<Task> tasks) throws TodException {
+        try {
+            createParentDirectory();
+            List<String> lines = new ArrayList<>();
+            for (Task task : tasks) {
+                lines.add(formatTask(task));
+            }
+            Files.write(filePath, lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new TodException("I couldn't save tasks to " + filePath + ".");
+        }
+    }
+
+    /** Creates the folder containing the save file when that folder does not exist. */
+    private void createParentDirectory() throws IOException {
+        Path parent = filePath.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+    }
+
+    /** Converts one task into a line suitable for the save file. */
+    private String formatTask(Task task) {
+        String status = task.isDone() ? "1" : "0";
+        if (task instanceof Deadline) {
+            Deadline deadline = (Deadline) task;
+            return "D" + SEPARATOR + status + SEPARATOR + deadline.getDescription()
+                    + SEPARATOR + deadline.getBy();
+        }
+        if (task instanceof Event) {
+            Event event = (Event) task;
+            return "E" + SEPARATOR + status + SEPARATOR + event.getDescription()
+                    + SEPARATOR + event.getFrom() + SEPARATOR + event.getTo();
+        }
+        return "T" + SEPARATOR + status + SEPARATOR + task.getDescription();
+    }
+
+    /** Reconstructs one task from a saved line and validates its stored fields. */
+    private Task parseTask(String line, int lineNumber) throws TodException {
+        String[] fields = line.split(" \\| ", -1);
+        if (fields.length < 3 || fields[2].isBlank()) {
+            throw invalidData(lineNumber);
+        }
+
+        Task task;
+        switch (fields[0]) {
+        case "T":
+            if (fields.length != 3) {
+                throw invalidData(lineNumber);
+            }
+            task = new Todo(fields[2]);
+            break;
+        case "D":
+            if (fields.length != 4 || fields[3].isBlank()) {
+                throw invalidData(lineNumber);
+            }
+            task = new Deadline(fields[2], fields[3]);
+            break;
+        case "E":
+            if (fields.length != 5 || fields[3].isBlank() || fields[4].isBlank()) {
+                throw invalidData(lineNumber);
+            }
+            task = new Event(fields[2], fields[3], fields[4]);
+            break;
+        default:
+            throw invalidData(lineNumber);
+        }
+
+        if (fields[1].equals("1")) {
+            task.markAsDone();
+        } else if (!fields[1].equals("0")) {
+            throw invalidData(lineNumber);
+        }
+        return task;
+    }
+
+    private TodException invalidData(int lineNumber) {
+        return new TodException("The saved task on line " + lineNumber + " is invalid.");
+    }
+}
