@@ -1,6 +1,8 @@
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+/** Runs the Todd task-management chatbot. */
 public class Todd {
     public static void main(String[] args) {
         String line = "\t____________________________________________________________";
@@ -9,10 +11,21 @@ public class Todd {
                 + "   / / / __ \\/ __  / __  / \n"
                 + "  / / / /_/ / /_/ / /_/ /  \n"
                 + " /_/  \\____/\\__,_/\\__,_/   \n";
-        ArrayList<Task> list = new ArrayList<>();
+        Storage storage = new Storage(Path.of("data", "todd.txt"));
+        ArrayList<Task> list;
 
         System.out.println(banner);
         System.out.println("Hello There! I'm Todd, a NPC Chatbot :P\nWhat can I do for you today?");
+
+        try {
+            list = storage.load();
+        } catch (TodException e) {
+            System.out.println(line);
+            System.out.println("\t " + e.getMessage());
+            System.out.println("\t Todd will start with an empty task list.");
+            System.out.println(line);
+            list = new ArrayList<>();
+        }
 
         Scanner sc = new Scanner(System.in);
         String txt = sc.nextLine();
@@ -57,6 +70,7 @@ public class Todd {
                             throw new TodException("That task is already marked.");
                         }
                         list.get(index).markAsDone();
+                        storage.save(list);
                         System.out.println(line);
                         System.out.println("\t Hooray! You are on fire! Task crossed off.");
                         System.out.println("\t    " + list.get(index));
@@ -70,6 +84,7 @@ public class Todd {
                             throw new TodException("That task is already unmarked.");
                         }
                         list.get(index).markAsUndone();
+                        storage.save(list);
                         System.out.println(line);
                         System.out.println("\t Oh no! Okay unmarked.");
                         System.out.println("\t    " + list.get(index));
@@ -84,6 +99,7 @@ public class Todd {
                         }
                         Task newTask = new Todo(description);
                         list.add(newTask);
+                        storage.save(list);
                         printAdded(line, newTask, list.size());
                         break;
                     }
@@ -103,6 +119,7 @@ public class Todd {
                         }
                         Task newTask = new Deadline(description, parts[1].trim());
                         list.add(newTask);
+                        storage.save(list);
                         printAdded(line, newTask, list.size());
                         break;
                     }
@@ -128,6 +145,7 @@ public class Todd {
                         String to = toSplit[1].trim();
                         Task newTask = new Event(description, from, to);
                         list.add(newTask);
+                        storage.save(list);
                         printAdded(line, newTask, list.size());
                         break;
                     }
@@ -135,6 +153,7 @@ public class Todd {
                     case DELETE: {
                         int index = parseIndex(txt, "delete", list.size());
                         Task removed = list.remove(index);
+                        storage.save(list);
                         System.out.println(line);
                         System.out.println("\t Noted. I've removed this task:");
                         System.out.println("\t   " + removed);
