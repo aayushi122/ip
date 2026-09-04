@@ -8,6 +8,7 @@ import java.util.List;
 public class TaskList {
     private final ArrayList<Task> tasks;
 
+    /** Creates an empty task list. */
     public TaskList() {
         this.tasks = new ArrayList<>();
     }
@@ -17,6 +18,7 @@ public class TaskList {
         this.tasks = new ArrayList<>(tasks);
     }
 
+    /** Returns the number of tasks in the list. */
     public int size() {
         return tasks.size();
     }
@@ -26,10 +28,12 @@ public class TaskList {
         return List.copyOf(tasks);
     }
 
+    /** Adds the specified task to the end of the list. */
     public void add(Task task) {
         tasks.add(task);
     }
 
+    /** Removes and returns the task at the specified zero-based index. */
     public Task delete(int index) {
         return tasks.remove(index);
     }

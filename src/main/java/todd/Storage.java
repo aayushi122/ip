@@ -15,6 +15,7 @@ public class Storage {
 
     private final Path filePath;
 
+    /** Creates storage that reads and writes tasks at the specified path. */
     public Storage(Path filePath) {
         this.filePath = filePath;
     }
