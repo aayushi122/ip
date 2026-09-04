@@ -91,4 +91,28 @@ public class TaskListTest {
         assertEquals(List.of(1), taskList.findTaskNumbersOn(LocalDate.of(2026, 9, 6)));
         assertEquals(List.of(), taskList.findTaskNumbersOn(LocalDate.of(2026, 9, 7)));
     }
+
+    @Test
+    public void find_keywordInMixedTaskDescriptions_returnsMatchesInOriginalOrder() {
+        Todo firstMatch = new Todo("read book");
+        Deadline nonMatch = new Deadline("submit report",
+                LocalDateTime.of(2026, 9, 4, 23, 59));
+        Event secondMatch = new Event("book club meeting",
+                LocalDateTime.of(2026, 9, 5, 9, 0),
+                LocalDateTime.of(2026, 9, 5, 10, 0));
+        TaskList taskList = new TaskList(List.of(firstMatch, nonMatch, secondMatch));
+
+        List<Task> result = taskList.find("book");
+
+        assertEquals(List.of(firstMatch, secondMatch), result);
+    }
+
+    @Test
+    public void find_keywordAbsent_returnsEmptyList() {
+        TaskList taskList = new TaskList(List.of(
+                new Todo("read book"),
+                new Todo("write report")));
+
+        assertEquals(List.of(), taskList.find("exercise"));
+    }
 }

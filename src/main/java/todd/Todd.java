@@ -91,6 +91,12 @@ public class Todd {
                         break;
                     }
 
+                    case FIND: {
+                        String keyword = Parser.parseKeyword(txt);
+                        ui.showMatchingTasks(tasks.find(keyword));
+                        break;
+                    }
+
                     case UNKNOWN:
                     default:
                         throw new TodException("What does that mean dawg");

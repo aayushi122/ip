@@ -21,6 +21,7 @@ public class ParserTest {
         assertEquals(Command.EVENT, Parser.parse("event meeting /from 2026-09-04 /to 2026-09-05"));
         assertEquals(Command.DELETE, Parser.parse("delete 1"));
         assertEquals(Command.ON, Parser.parse("on 2026-09-04"));
+        assertEquals(Command.FIND, Parser.parse("find book"));
     }
 
     @Test
@@ -121,5 +122,15 @@ public class ParserTest {
     public void parseDate_invalidInput_throwsTodException() {
         assertThrows(TodException.class,
                 () -> Parser.parseDate("on Friday"));
+    }
+
+    @Test
+    public void parseKeyword_validInput_returnsTrimmedKeyword() throws TodException {
+        assertEquals("project report", Parser.parseKeyword("find   project report  "));
+    }
+
+    @Test
+    public void parseKeyword_missingKeyword_throwsTodException() {
+        assertThrows(TodException.class, () -> Parser.parseKeyword("find"));
     }
 }

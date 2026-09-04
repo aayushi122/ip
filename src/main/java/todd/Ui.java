@@ -119,6 +119,20 @@ public class Ui {
         showLine();
     }
 
+    /** Displays tasks whose descriptions match a find command. */
+    public void showMatchingTasks(List<Task> matchingTasks) {
+        showLine();
+        if (matchingTasks.isEmpty()) {
+            System.out.println("\t There are no matching tasks in your list.");
+        } else {
+            System.out.println("\t Here are the matching tasks in your list:");
+            for (int i = 0; i < matchingTasks.size(); i++) {
+                System.out.println("\t  " + (i + 1) + "." + matchingTasks.get(i));
+            }
+        }
+        showLine();
+    }
+
     private void showLine() {
         System.out.println(LINE);
     }
