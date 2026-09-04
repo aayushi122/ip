@@ -13,7 +13,7 @@ public class Task {
 
     /** Returns the icon used to display the task's completion status. */
     public String getStatusIcon() {
-        return (isDone ? "X" : " "); // mark done task with X
+        return isDone ? "X" : " ";
     }
 
     /** Returns the task description. */
