@@ -42,6 +42,21 @@ public final class DateTimeUtil {
         }
     }
 
+    /**
+     * Parses the date used by commands that search for tasks on a specific day.
+     *
+     * @param input date text in yyyy-MM-dd format
+     * @return the parsed date
+     * @throws TodException if the input is not a real date in the required format
+     */
+    public static LocalDate parseDate(String input) throws TodException {
+        try {
+            return LocalDate.parse(input, INPUT_DATE);
+        } catch (DateTimeParseException e) {
+            throw new TodException("Please use a valid date in yyyy-MM-dd format.");
+        }
+    }
+
     /** Formats a stored date and omits the time when it is midnight. */
     public static String format(LocalDateTime dateTime) {
         if (dateTime.toLocalTime().equals(LocalTime.MIDNIGHT)) {
