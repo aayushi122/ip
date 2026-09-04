@@ -37,16 +37,16 @@ public class ParserTest {
 
     @Test
     public void parseIndex_nonNumericTaskNumber_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> Parser.parseIndex("mark one", "mark", 3));
+        assertThrows(TodException.class, () ->
+                Parser.parseIndex("mark one", "mark", 3));
     }
 
     @Test
     public void parseIndex_taskNumberOutsideList_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> Parser.parseIndex("mark 0", "mark", 3));
-        assertThrows(TodException.class,
-                () -> Parser.parseIndex("mark 4", "mark", 3));
+        assertThrows(TodException.class, () ->
+                Parser.parseIndex("mark 0", "mark", 3));
+        assertThrows(TodException.class, () ->
+                Parser.parseIndex("mark 4", "mark", 3));
     }
 
     @Test
@@ -58,8 +58,8 @@ public class ParserTest {
 
     @Test
     public void parseTodo_missingDescription_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> Parser.parseTodo("todo"));
+        assertThrows(TodException.class, () ->
+                Parser.parseTodo("todo"));
     }
 
     @Test
@@ -72,14 +72,14 @@ public class ParserTest {
 
     @Test
     public void parseDeadline_missingBy_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> Parser.parseDeadline("deadline submit report"));
+        assertThrows(TodException.class, () ->
+                Parser.parseDeadline("deadline submit report"));
     }
 
     @Test
     public void parseDeadline_invalidDate_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> Parser.parseDeadline("deadline submit report /by 2026-02-30"));
+        assertThrows(TodException.class, () ->
+                Parser.parseDeadline("deadline submit report /by 2026-02-30"));
     }
 
     @Test
@@ -94,21 +94,20 @@ public class ParserTest {
 
     @Test
     public void parseEvent_missingFrom_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> Parser.parseEvent("event project meeting"));
+        assertThrows(TodException.class, () ->
+                Parser.parseEvent("event project meeting"));
     }
 
     @Test
     public void parseEvent_missingTo_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> Parser.parseEvent("event project meeting /from 2026-09-04 1400"));
+        assertThrows(TodException.class, () ->
+                Parser.parseEvent("event project meeting /from 2026-09-04 1400"));
     }
 
     @Test
     public void parseEvent_endBeforeStart_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> Parser.parseEvent(
-                        "event project meeting /from 2026-09-04 1600 /to 2026-09-04 1400"));
+        assertThrows(TodException.class, () ->
+                Parser.parseEvent("event project meeting /from 2026-09-04 1600 /to 2026-09-04 1400"));
     }
 
     @Test
@@ -120,8 +119,8 @@ public class ParserTest {
 
     @Test
     public void parseDate_invalidInput_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> Parser.parseDate("on Friday"));
+        assertThrows(TodException.class, () ->
+                Parser.parseDate("on Friday"));
     }
 
     @Test
