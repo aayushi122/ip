@@ -1,4 +1,5 @@
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -117,7 +118,8 @@ public class Todd {
                         if (parts.length < 2 || parts[1].trim().isEmpty()) {
                             throw new TodException("Try Again! There is no /by date or time.");
                         }
-                        Task newTask = new Deadline(description, parts[1].trim());
+                        LocalDateTime by = DateTimeUtil.parseDateTime(parts[1].trim());
+                        Task newTask = new Deadline(description, by);
                         list.add(newTask);
                         storage.save(list);
                         printAdded(line, newTask, list.size());
@@ -138,11 +140,16 @@ public class Todd {
                             throw new TodException("Try Again! There is no /from time.");
                         }
                         String[] toSplit = fromSplit[1].split(" /to ", 2);
-                        String from = toSplit[0].trim();
+                        String fromText = toSplit[0].trim();
                         if (toSplit.length < 2 || toSplit[1].trim().isEmpty()) {
                             throw new TodException("Try Again! There is no /to time.");
                         }
-                        String to = toSplit[1].trim();
+                        String toText = toSplit[1].trim();
+                        LocalDateTime from = DateTimeUtil.parseDateTime(fromText);
+                        LocalDateTime to = DateTimeUtil.parseDateTime(toText);
+                        if (to.isBefore(from)) {
+                            throw new TodException("The /to date and time cannot be before /from.");
+                        }
                         Task newTask = new Event(description, from, to);
                         list.add(newTask);
                         storage.save(list);

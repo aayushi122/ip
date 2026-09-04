@@ -2,6 +2,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,12 +77,12 @@ public class Storage {
         if (task instanceof Deadline) {
             Deadline deadline = (Deadline) task;
             return "D" + SEPARATOR + status + SEPARATOR + deadline.getDescription()
-                    + SEPARATOR + deadline.getBy();
+                    + SEPARATOR + deadline.getBy().toString();
         }
         if (task instanceof Event) {
             Event event = (Event) task;
             return "E" + SEPARATOR + status + SEPARATOR + event.getDescription()
-                    + SEPARATOR + event.getFrom() + SEPARATOR + event.getTo();
+                    + SEPARATOR + event.getFrom().toString() + SEPARATOR + event.getTo().toString();
         }
         return "T" + SEPARATOR + status + SEPARATOR + task.getDescription();
     }
@@ -93,26 +95,35 @@ public class Storage {
         }
 
         Task task;
-        switch (fields[0]) {
-        case "T":
-            if (fields.length != 3) {
+        try {
+            switch (fields[0]) {
+            case "T":
+                if (fields.length != 3) {
+                    throw invalidData(lineNumber);
+                }
+                task = new Todo(fields[2]);
+                break;
+            case "D":
+                if (fields.length != 4 || fields[3].isBlank()) {
+                    throw invalidData(lineNumber);
+                }
+                task = new Deadline(fields[2], LocalDateTime.parse(fields[3]));
+                break;
+            case "E":
+                if (fields.length != 5 || fields[3].isBlank() || fields[4].isBlank()) {
+                    throw invalidData(lineNumber);
+                }
+                LocalDateTime from = LocalDateTime.parse(fields[3]);
+                LocalDateTime to = LocalDateTime.parse(fields[4]);
+                if (to.isBefore(from)) {
+                    throw invalidData(lineNumber);
+                }
+                task = new Event(fields[2], from, to);
+                break;
+            default:
                 throw invalidData(lineNumber);
             }
-            task = new Todo(fields[2]);
-            break;
-        case "D":
-            if (fields.length != 4 || fields[3].isBlank()) {
-                throw invalidData(lineNumber);
-            }
-            task = new Deadline(fields[2], fields[3]);
-            break;
-        case "E":
-            if (fields.length != 5 || fields[3].isBlank() || fields[4].isBlank()) {
-                throw invalidData(lineNumber);
-            }
-            task = new Event(fields[2], fields[3], fields[4]);
-            break;
-        default:
+        } catch (DateTimeParseException e) {
             throw invalidData(lineNumber);
         }
 
