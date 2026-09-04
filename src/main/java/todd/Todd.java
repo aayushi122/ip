@@ -4,110 +4,145 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Runs the Todd task-management chatbot. */
+/** Runs the Todd task-management chatbot and processes user commands. */
 public class Todd {
-    /** Starts Todd using the default data-file location. */
-    public static void main(String[] args) {
-        Ui ui = new Ui();
-        Storage storage = new Storage(Path.of("data", "todd.txt"));
-        TaskList tasks;
+    private static final Path DEFAULT_DATA_PATH = Path.of("data", "todd.txt");
 
-        ui.showWelcome();
+    private final Ui ui;
+    private final Storage storage;
+    private final TaskList tasks;
+    private final String loadingError;
 
+    /** Creates Todd using the default data-file location. */
+    public Todd() {
+        this(DEFAULT_DATA_PATH);
+    }
+
+    /** Creates Todd using a specified data file, primarily for testing. */
+    public Todd(Path dataPath) {
+        ui = new Ui();
+        storage = new Storage(dataPath);
+
+        TaskList loadedTasks;
+        String error = null;
         try {
-            tasks = new TaskList(storage.load());
+            loadedTasks = new TaskList(storage.load());
         } catch (TodException e) {
-            ui.showLoadingError(e.getMessage());
-            tasks = new TaskList();
+            loadedTasks = new TaskList();
+            error = ui.formatLoadingError(e.getMessage());
         }
+        tasks = loadedTasks;
+        loadingError = error;
+    }
 
-        String txt = ui.readCommand();
+    /** Starts Todd's text-based interface. */
+    public static void main(String[] args) {
+        new Todd().run();
+    }
 
-        while (true) {
-            try {
-                Command command = Parser.parse(txt);
+    /** Returns the startup message shown by both interfaces. */
+    public String getWelcomeMessage() {
+        if (loadingError == null) {
+            return ui.formatWelcome();
+        }
+        return ui.formatWelcome() + System.lineSeparator() + loadingError;
+    }
 
-                switch (command) {
-                    case BYE:
-                        ui.showGoodbye();
-                        return;
-
-                    case LIST:
-                        ui.showTaskList(tasks.asList());
-                        break;
-
-                    case MARK: {
-                        int index = Parser.parseIndex(txt, "mark", tasks.size());
-                        Task task = tasks.mark(index);
-                        storage.save(tasks.asList());
-                        ui.showMarked(task);
-                        break;
-                    }
-
-                    case UNMARK: {
-                        int index = Parser.parseIndex(txt, "unmark", tasks.size());
-                        Task task = tasks.unmark(index);
-                        storage.save(tasks.asList());
-                        ui.showUnmarked(task);
-                        break;
-                    }
-
-                    case TODO: {
-                        Task newTask = Parser.parseTodo(txt);
-                        tasks.add(newTask);
-                        storage.save(tasks.asList());
-                        ui.showAdded(newTask, tasks.size());
-                        break;
-                    }
-
-                    case DEADLINE: {
-                        Task newTask = Parser.parseDeadline(txt);
-                        tasks.add(newTask);
-                        storage.save(tasks.asList());
-                        ui.showAdded(newTask, tasks.size());
-                        break;
-                    }
-
-                    case EVENT: {
-                        Task newTask = Parser.parseEvent(txt);
-                        tasks.add(newTask);
-                        storage.save(tasks.asList());
-                        ui.showAdded(newTask, tasks.size());
-                        break;
-                    }
-
-                    case DELETE: {
-                        int index = Parser.parseIndex(txt, "delete", tasks.size());
-                        Task removed = tasks.delete(index);
-                        storage.save(tasks.asList());
-                        ui.showDeleted(removed, tasks.size());
-                        break;
-                    }
-
-                    case ON: {
-                        LocalDate date = Parser.parseDate(txt);
-                        List<Integer> taskNumbers = tasks.findTaskNumbersOn(date);
-                        ui.showTasksOnDate(date, tasks.asList(), taskNumbers);
-                        break;
-                    }
-
-                    case FIND: {
-                        String keyword = Parser.parseKeyword(txt);
-                        ui.showMatchingTasks(tasks.find(keyword));
-                        break;
-                    }
-
-                    case UNKNOWN:
-                    default:
-                        throw new TodException("What does that mean dawg");
-                }
-
-            } catch (TodException e) {
-                ui.showError(e.getMessage());
-            }
-
-            txt = ui.readCommand();
+    /**
+     * Processes one command and returns the response for either user interface.
+     *
+     * @param input command entered by the user
+     * @return response to display
+     */
+    public String getResponse(String input) {
+        try {
+            Command command = Parser.parse(input);
+            return execute(command, input);
+        } catch (TodException e) {
+            return ui.formatError(e.getMessage());
         }
     }
 
+    private void run() {
+        ui.show(getWelcomeMessage());
+
+        while (true) {
+            String input = ui.readCommand();
+            Command command = Parser.parse(input);
+            ui.show(getResponse(input));
+            if (command == Command.BYE) {
+                return;
+            }
+        }
+    }
+
+    private String execute(Command command, String input) throws TodException {
+        switch (command) {
+            case BYE:
+                return ui.formatGoodbye();
+
+            case LIST:
+                return ui.formatTaskList(tasks.asList());
+
+            case MARK: {
+                int index = Parser.parseIndex(input, "mark", tasks.size());
+                Task task = tasks.mark(index);
+                saveTasks();
+                return ui.formatMarked(task);
+            }
+
+            case UNMARK: {
+                int index = Parser.parseIndex(input, "unmark", tasks.size());
+                Task task = tasks.unmark(index);
+                saveTasks();
+                return ui.formatUnmarked(task);
+            }
+
+            case TODO: {
+                Task newTask = Parser.parseTodo(input);
+                tasks.add(newTask);
+                saveTasks();
+                return ui.formatAdded(newTask, tasks.size());
+            }
+
+            case DEADLINE: {
+                Task newTask = Parser.parseDeadline(input);
+                tasks.add(newTask);
+                saveTasks();
+                return ui.formatAdded(newTask, tasks.size());
+            }
+
+            case EVENT: {
+                Task newTask = Parser.parseEvent(input);
+                tasks.add(newTask);
+                saveTasks();
+                return ui.formatAdded(newTask, tasks.size());
+            }
+
+            case DELETE: {
+                int index = Parser.parseIndex(input, "delete", tasks.size());
+                Task removed = tasks.delete(index);
+                saveTasks();
+                return ui.formatDeleted(removed, tasks.size());
+            }
+
+            case ON: {
+                LocalDate date = Parser.parseDate(input);
+                List<Integer> taskNumbers = tasks.findTaskNumbersOn(date);
+                return ui.formatTasksOnDate(date, tasks.asList(), taskNumbers);
+            }
+
+            case FIND:
+                String keyword = Parser.parseKeyword(input);
+                return ui.formatMatchingTasks(tasks.find(keyword));
+
+            case UNKNOWN:
+            default:
+                throw new TodException("What does that mean dawg");
+        }
+    }
+
+    private void saveTasks() throws TodException {
+        storage.save(tasks.asList());
+    }
 }

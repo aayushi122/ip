@@ -4,9 +4,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Scanner;
 
-/** Handles all console input and output for Todd. */
+/** Reads console input and formats responses shared by Todd's interfaces. */
 public class Ui {
-    private static final String LINE = "\t____________________________________________________________";
+    private static final String LINE = "____________________________________________________________";
     private static final String BANNER = "   ______          __     __\n"
             + "  /_  __/___  ____/ /____/ /\n"
             + "   / / / __ \\/ __  / __  / \n"
@@ -17,7 +17,7 @@ public class Ui {
 
     /** Creates a console UI that reads commands from standard input. */
     public Ui() {
-        this.scanner = new Scanner(System.in);
+        scanner = new Scanner(System.in);
     }
 
     /** Returns the next command entered by the user. */
@@ -25,115 +25,96 @@ public class Ui {
         return scanner.nextLine();
     }
 
-    /** Displays Todd's welcome message. */
-    public void showWelcome() {
-        System.out.println(BANNER);
-        System.out.println("Hello There! I'm Todd, a NPC Chatbot :P\nWhat can I do for you today?");
+    /** Displays an already formatted message on the console. */
+    public void show(String message) {
+        System.out.println(message);
     }
 
-    /** Displays Todd's goodbye message. */
-    public void showGoodbye() {
-        System.out.println("Noo don't go, come back. Ok fine bye. See you soon.");
+    /** Returns Todd's welcome message. */
+    public String formatWelcome() {
+        return BANNER + "Hello There! I'm Todd, a NPC Chatbot :P\nWhat can I do for you today?";
     }
 
-    /** Shows an error that prevented saved tasks from being loaded at startup. */
-    public void showLoadingError(String message) {
-        showLine();
-        System.out.println("\t " + message);
-        System.out.println("\t Todd will start with an empty task list.");
-        showLine();
+    /** Returns Todd's goodbye message. */
+    public String formatGoodbye() {
+        return "Noo don't go, come back. Ok fine bye. See you soon.";
     }
 
-    /** Displays a user-facing command error. */
-    public void showError(String message) {
-        showLine();
-        System.out.println("\t " + message);
-        showLine();
+    /** Returns an error that prevented saved tasks from being loaded. */
+    public String formatLoadingError(String message) {
+        return surround(message + "\nTodd will start with an empty task list.");
     }
 
-    /** Displays all tasks, or an empty-list message when there are none. */
-    public void showTaskList(List<Task> tasks) {
-        showLine();
+    /** Returns a user-facing command error. */
+    public String formatError(String message) {
+        return surround(message);
+    }
+
+    /** Returns all tasks, or an empty-list message when there are none. */
+    public String formatTaskList(List<Task> tasks) {
         if (tasks.isEmpty()) {
-            System.out.println("\t Your list is empty! Add some tasks first.");
-        } else {
-            System.out.println("\t Here are the tasks in your list:");
-            for (int i = 0; i < tasks.size(); i++) {
-                System.out.println("\t  " + (i + 1) + "." + tasks.get(i));
-            }
+            return surround("Your list is empty! Add some tasks first.");
         }
-        showLine();
+
+        StringBuilder content = new StringBuilder("Here are the tasks in your list:");
+        appendNumberedTasks(content, tasks);
+        return surround(content.toString());
     }
 
-    /** Displays confirmation that the specified task was marked. */
-    public void showMarked(Task task) {
-        showLine();
-        System.out.println("\t Hooray! You are on fire! Task crossed off.");
-        System.out.println("\t    " + task);
-        showLine();
+    /** Returns confirmation that the specified task was marked. */
+    public String formatMarked(Task task) {
+        return surround("Hooray! You are on fire! Task crossed off.\n   " + task);
     }
 
-    /** Displays confirmation that the specified task was unmarked. */
-    public void showUnmarked(Task task) {
-        showLine();
-        System.out.println("\t Oh no! Okay unmarked.");
-        System.out.println("\t    " + task);
-        showLine();
+    /** Returns confirmation that the specified task was unmarked. */
+    public String formatUnmarked(Task task) {
+        return surround("Oh no! Okay unmarked.\n   " + task);
     }
 
-    /** Displays the added task and the updated total number of tasks. */
-    public void showAdded(Task task, int totalTasks) {
-        showLine();
-        System.out.println("\t Got it. I've added this task:");
-        System.out.println("\t   " + task);
-        System.out.println("\t Now you have " + totalTasks + " tasks in the list.");
-        showLine();
+    /** Returns the added task and the updated total number of tasks. */
+    public String formatAdded(Task task, int totalTasks) {
+        return surround("Got it. I've added this task:\n   " + task
+                + "\nNow you have " + totalTasks + " tasks in the list.");
     }
 
-    /** Displays the deleted task and the updated total number of tasks. */
-    public void showDeleted(Task task, int totalTasks) {
-        showLine();
-        System.out.println("\t Noted. I've removed this task:");
-        System.out.println("\t   " + task);
-        System.out.println("\t Now you have " + totalTasks + " tasks in the list.");
-        showLine();
+    /** Returns the deleted task and the updated total number of tasks. */
+    public String formatDeleted(Task task, int totalTasks) {
+        return surround("Noted. I've removed this task:\n   " + task
+                + "\nNow you have " + totalTasks + " tasks in the list.");
     }
 
-    /**
-     * Shows tasks selected by a date search together with their original list numbers.
-     *
-     * @param date date requested by the user
-     * @param tasks complete task list
-     * @param taskNumbers one-based positions of matching tasks in the full task list
-     */
-    public void showTasksOnDate(LocalDate date, List<Task> tasks, List<Integer> taskNumbers) {
-        showLine();
-        System.out.println("\t Deadlines and events on " + DateTimeUtil.format(date) + ":");
+    /** Returns tasks selected by a date search together with their original list numbers. */
+    public String formatTasksOnDate(LocalDate date, List<Task> tasks, List<Integer> taskNumbers) {
+        StringBuilder content = new StringBuilder("Deadlines and events on ")
+                .append(DateTimeUtil.format(date)).append(":");
         if (taskNumbers.isEmpty()) {
-            System.out.println("\t You have no deadlines or events on that date.");
+            content.append("\nYou have no deadlines or events on that date.");
         } else {
             for (int taskNumber : taskNumbers) {
-                System.out.println("\t  " + taskNumber + "." + tasks.get(taskNumber - 1));
+                content.append("\n ").append(taskNumber).append(".").append(tasks.get(taskNumber - 1));
             }
         }
-        showLine();
+        return surround(content.toString());
     }
 
-    /** Displays tasks whose descriptions match a find command. */
-    public void showMatchingTasks(List<Task> matchingTasks) {
-        showLine();
+    /** Returns tasks whose descriptions match a find command. */
+    public String formatMatchingTasks(List<Task> matchingTasks) {
         if (matchingTasks.isEmpty()) {
-            System.out.println("\t There are no matching tasks in your list.");
-        } else {
-            System.out.println("\t Here are the matching tasks in your list:");
-            for (int i = 0; i < matchingTasks.size(); i++) {
-                System.out.println("\t  " + (i + 1) + "." + matchingTasks.get(i));
-            }
+            return surround("There are no matching tasks in your list.");
         }
-        showLine();
+
+        StringBuilder content = new StringBuilder("Here are the matching tasks in your list:");
+        appendNumberedTasks(content, matchingTasks);
+        return surround(content.toString());
     }
 
-    private void showLine() {
-        System.out.println(LINE);
+    private void appendNumberedTasks(StringBuilder content, List<Task> tasks) {
+        for (int i = 0; i < tasks.size(); i++) {
+            content.append("\n ").append(i + 1).append(".").append(tasks.get(i));
+        }
+    }
+
+    private String surround(String content) {
+        return LINE + "\n" + content + "\n" + LINE;
     }
 }
