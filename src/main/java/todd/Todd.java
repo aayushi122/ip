@@ -6,6 +6,7 @@ import java.util.List;
 
 /** Runs the Todd task-management chatbot. */
 public class Todd {
+    /** Starts Todd using the default data-file location. */
     public static void main(String[] args) {
         Ui ui = new Ui();
         Storage storage = new Storage(Path.of("data", "todd.txt"));

@@ -15,19 +15,23 @@ public class Ui {
 
     private final Scanner scanner;
 
+    /** Creates a console UI that reads commands from standard input. */
     public Ui() {
         this.scanner = new Scanner(System.in);
     }
 
+    /** Returns the next command entered by the user. */
     public String readCommand() {
         return scanner.nextLine();
     }
 
+    /** Displays Todd's welcome message. */
     public void showWelcome() {
         System.out.println(BANNER);
         System.out.println("Hello There! I'm Todd, a NPC Chatbot :P\nWhat can I do for you today?");
     }
 
+    /** Displays Todd's goodbye message. */
     public void showGoodbye() {
         System.out.println("Noo don't go, come back. Ok fine bye. See you soon.");
     }
@@ -40,12 +44,14 @@ public class Ui {
         showLine();
     }
 
+    /** Displays a user-facing command error. */
     public void showError(String message) {
         showLine();
         System.out.println("\t " + message);
         showLine();
     }
 
+    /** Displays all tasks, or an empty-list message when there are none. */
     public void showTaskList(List<Task> tasks) {
         showLine();
         if (tasks.isEmpty()) {
@@ -59,6 +65,7 @@ public class Ui {
         showLine();
     }
 
+    /** Displays confirmation that the specified task was marked. */
     public void showMarked(Task task) {
         showLine();
         System.out.println("\t Hooray! You are on fire! Task crossed off.");
@@ -66,6 +73,7 @@ public class Ui {
         showLine();
     }
 
+    /** Displays confirmation that the specified task was unmarked. */
     public void showUnmarked(Task task) {
         showLine();
         System.out.println("\t Oh no! Okay unmarked.");
@@ -73,6 +81,7 @@ public class Ui {
         showLine();
     }
 
+    /** Displays the added task and the updated total number of tasks. */
     public void showAdded(Task task, int totalTasks) {
         showLine();
         System.out.println("\t Got it. I've added this task:");
@@ -81,6 +90,7 @@ public class Ui {
         showLine();
     }
 
+    /** Displays the deleted task and the updated total number of tasks. */
     public void showDeleted(Task task, int totalTasks) {
         showLine();
         System.out.println("\t Noted. I've removed this task:");
