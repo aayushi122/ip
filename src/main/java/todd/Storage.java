@@ -99,31 +99,31 @@ public class Storage {
         Task task;
         try {
             switch (fields[0]) {
-            case "T":
-                if (fields.length != 3) {
+                case "T":
+                    if (fields.length != 3) {
+                        throw invalidData(lineNumber);
+                    }
+                    task = new Todo(fields[2]);
+                    break;
+                case "D":
+                    if (fields.length != 4 || fields[3].isBlank()) {
+                        throw invalidData(lineNumber);
+                    }
+                    task = new Deadline(fields[2], LocalDateTime.parse(fields[3]));
+                    break;
+                case "E":
+                    if (fields.length != 5 || fields[3].isBlank() || fields[4].isBlank()) {
+                        throw invalidData(lineNumber);
+                    }
+                    LocalDateTime from = LocalDateTime.parse(fields[3]);
+                    LocalDateTime to = LocalDateTime.parse(fields[4]);
+                    if (to.isBefore(from)) {
+                        throw invalidData(lineNumber);
+                    }
+                    task = new Event(fields[2], from, to);
+                    break;
+                default:
                     throw invalidData(lineNumber);
-                }
-                task = new Todo(fields[2]);
-                break;
-            case "D":
-                if (fields.length != 4 || fields[3].isBlank()) {
-                    throw invalidData(lineNumber);
-                }
-                task = new Deadline(fields[2], LocalDateTime.parse(fields[3]));
-                break;
-            case "E":
-                if (fields.length != 5 || fields[3].isBlank() || fields[4].isBlank()) {
-                    throw invalidData(lineNumber);
-                }
-                LocalDateTime from = LocalDateTime.parse(fields[3]);
-                LocalDateTime to = LocalDateTime.parse(fields[4]);
-                if (to.isBefore(from)) {
-                    throw invalidData(lineNumber);
-                }
-                task = new Event(fields[2], from, to);
-                break;
-            default:
-                throw invalidData(lineNumber);
             }
         } catch (DateTimeParseException e) {
             throw invalidData(lineNumber);

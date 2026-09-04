@@ -12,26 +12,26 @@ public final class Parser {
     public static Command parse(String input) {
         String commandWord = input.split(" ")[0];
         switch (commandWord) {
-        case "bye":
-            return Command.BYE;
-        case "list":
-            return Command.LIST;
-        case "mark":
-            return Command.MARK;
-        case "unmark":
-            return Command.UNMARK;
-        case "todo":
-            return Command.TODO;
-        case "deadline":
-            return Command.DEADLINE;
-        case "event":
-            return Command.EVENT;
-        case "delete":
-            return Command.DELETE;
-        case "on":
-            return Command.ON;
-        default:
-            return Command.UNKNOWN;
+            case "bye":
+                return Command.BYE;
+            case "list":
+                return Command.LIST;
+            case "mark":
+                return Command.MARK;
+            case "unmark":
+                return Command.UNMARK;
+            case "todo":
+                return Command.TODO;
+            case "deadline":
+                return Command.DEADLINE;
+            case "event":
+                return Command.EVENT;
+            case "delete":
+                return Command.DELETE;
+            case "on":
+                return Command.ON;
+            default:
+                return Command.UNKNOWN;
         }
     }
 
