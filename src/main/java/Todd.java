@@ -1,4 +1,6 @@
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -43,6 +45,7 @@ public class Todd {
                     case "deadline": command = Command.DEADLINE; break;
                     case "event": command = Command.EVENT; break;
                     case "delete": command = Command.DELETE; break;
+                    case "on": command = Command.ON; break;
                     default: command = Command.UNKNOWN;
                 }
 
@@ -117,7 +120,8 @@ public class Todd {
                         if (parts.length < 2 || parts[1].trim().isEmpty()) {
                             throw new TodException("Try Again! There is no /by date or time.");
                         }
-                        Task newTask = new Deadline(description, parts[1].trim());
+                        LocalDateTime by = DateTimeUtil.parseDateTime(parts[1].trim());
+                        Task newTask = new Deadline(description, by);
                         list.add(newTask);
                         storage.save(list);
                         printAdded(line, newTask, list.size());
@@ -138,11 +142,16 @@ public class Todd {
                             throw new TodException("Try Again! There is no /from time.");
                         }
                         String[] toSplit = fromSplit[1].split(" /to ", 2);
-                        String from = toSplit[0].trim();
+                        String fromText = toSplit[0].trim();
                         if (toSplit.length < 2 || toSplit[1].trim().isEmpty()) {
                             throw new TodException("Try Again! There is no /to time.");
                         }
-                        String to = toSplit[1].trim();
+                        String toText = toSplit[1].trim();
+                        LocalDateTime from = DateTimeUtil.parseDateTime(fromText);
+                        LocalDateTime to = DateTimeUtil.parseDateTime(toText);
+                        if (to.isBefore(from)) {
+                            throw new TodException("The /to date and time cannot be before /from.");
+                        }
                         Task newTask = new Event(description, from, to);
                         list.add(newTask);
                         storage.save(list);
@@ -159,6 +168,13 @@ public class Todd {
                         System.out.println("\t   " + removed);
                         System.out.println("\t Now you have " + list.size() + " tasks in the list.");
                         System.out.println(line);
+                        break;
+                    }
+
+                    case ON: {
+                        String dateText = txt.length() > 2 ? txt.substring(2).trim() : "";
+                        LocalDate date = DateTimeUtil.parseDate(dateText);
+                        printTasksOnDate(line, list, date);
                         break;
                     }
 
@@ -201,5 +217,38 @@ public class Todd {
         System.out.println("\t   " + newTask);
         System.out.println("\t Now you have " + totalTasks + " tasks in the list.");
         System.out.println(line);
+    }
+
+    /** Prints deadlines due and events taking place on the requested date. */
+    private static void printTasksOnDate(String line, ArrayList<Task> tasks, LocalDate date) {
+        System.out.println(line);
+        System.out.println("\t Deadlines and events on " + DateTimeUtil.format(date) + ":");
+        boolean foundTask = false;
+        for (int i = 0; i < tasks.size(); i++) {
+            Task task = tasks.get(i);
+            if (occursOn(task, date)) {
+                System.out.println("\t  " + (i + 1) + "." + task);
+                foundTask = true;
+            }
+        }
+        if (!foundTask) {
+            System.out.println("\t You have no deadlines or events on that date.");
+        }
+        System.out.println(line);
+    }
+
+    /** Returns whether a deadline or event belongs in a date search result. */
+    private static boolean occursOn(Task task, LocalDate date) {
+        if (task instanceof Deadline) {
+            Deadline deadline = (Deadline) task;
+            return deadline.getBy().toLocalDate().equals(date);
+        }
+        if (task instanceof Event) {
+            Event event = (Event) task;
+            LocalDate from = event.getFrom().toLocalDate();
+            LocalDate to = event.getTo().toLocalDate();
+            return !date.isBefore(from) && !date.isAfter(to);
+        }
+        return false;
     }
 }
