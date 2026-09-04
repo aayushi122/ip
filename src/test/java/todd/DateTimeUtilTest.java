@@ -26,8 +26,8 @@ public class DateTimeUtilTest {
 
     @Test
     public void parseDateTime_invalidDate_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> DateTimeUtil.parseDateTime("2026-02-30"));
+        assertThrows(TodException.class, () ->
+                DateTimeUtil.parseDateTime("2026-02-30"));
     }
 
     @Test
@@ -39,14 +39,14 @@ public class DateTimeUtilTest {
 
     @Test
     public void parseDate_dateWithTime_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> DateTimeUtil.parseDate("2026-09-04 1430"));
+        assertThrows(TodException.class, () ->
+                DateTimeUtil.parseDate("2026-09-04 1430"));
     }
 
     @Test
     public void parseDate_invalidDate_throwsTodException() {
-        assertThrows(TodException.class,
-                () -> DateTimeUtil.parseDate("2026-02-30"));
+        assertThrows(TodException.class, () ->
+                DateTimeUtil.parseDate("2026-02-30"));
     }
 
     @Test
