@@ -1,0 +1,125 @@
+package todd;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import org.junit.jupiter.api.Test;
+
+/** Tests the command-specific parsing behavior provided by {@link Parser}. */
+public class ParserTest {
+    @Test
+    public void parse_supportedCommands_returnsMatchingCommand() {
+        assertEquals(Command.BYE, Parser.parse("bye"));
+        assertEquals(Command.LIST, Parser.parse("list"));
+        assertEquals(Command.MARK, Parser.parse("mark 1"));
+        assertEquals(Command.UNMARK, Parser.parse("unmark 1"));
+        assertEquals(Command.TODO, Parser.parse("todo read book"));
+        assertEquals(Command.DEADLINE, Parser.parse("deadline submit report /by 2026-09-04"));
+        assertEquals(Command.EVENT, Parser.parse("event meeting /from 2026-09-04 /to 2026-09-05"));
+        assertEquals(Command.DELETE, Parser.parse("delete 1"));
+        assertEquals(Command.ON, Parser.parse("on 2026-09-04"));
+    }
+
+    @Test
+    public void parse_unsupportedCommand_returnsUnknown() {
+        assertEquals(Command.UNKNOWN, Parser.parse("dance"));
+    }
+
+    @Test
+    public void parseIndex_validTaskNumber_returnsZeroBasedIndex() throws TodException {
+        assertEquals(0, Parser.parseIndex("mark 1", "mark", 3));
+        assertEquals(2, Parser.parseIndex("mark 3", "mark", 3));
+    }
+
+    @Test
+    public void parseIndex_nonNumericTaskNumber_throwsTodException() {
+        assertThrows(TodException.class,
+                () -> Parser.parseIndex("mark one", "mark", 3));
+    }
+
+    @Test
+    public void parseIndex_taskNumberOutsideList_throwsTodException() {
+        assertThrows(TodException.class,
+                () -> Parser.parseIndex("mark 0", "mark", 3));
+        assertThrows(TodException.class,
+                () -> Parser.parseIndex("mark 4", "mark", 3));
+    }
+
+    @Test
+    public void parseTodo_validInput_returnsTodo() throws TodException {
+        Todo result = Parser.parseTodo("todo read book");
+
+        assertEquals("read book", result.getDescription());
+    }
+
+    @Test
+    public void parseTodo_missingDescription_throwsTodException() {
+        assertThrows(TodException.class,
+                () -> Parser.parseTodo("todo"));
+    }
+
+    @Test
+    public void parseDeadline_validInput_returnsDeadline() throws TodException {
+        Deadline result = Parser.parseDeadline("deadline submit report /by 2026-09-04 2359");
+
+        assertEquals("submit report", result.getDescription());
+        assertEquals(LocalDateTime.of(2026, 9, 4, 23, 59), result.getBy());
+    }
+
+    @Test
+    public void parseDeadline_missingBy_throwsTodException() {
+        assertThrows(TodException.class,
+                () -> Parser.parseDeadline("deadline submit report"));
+    }
+
+    @Test
+    public void parseDeadline_invalidDate_throwsTodException() {
+        assertThrows(TodException.class,
+                () -> Parser.parseDeadline("deadline submit report /by 2026-02-30"));
+    }
+
+    @Test
+    public void parseEvent_validInput_returnsEvent() throws TodException {
+        Event result = Parser.parseEvent(
+                "event project meeting /from 2026-09-04 1400 /to 2026-09-04 1600");
+
+        assertEquals("project meeting", result.getDescription());
+        assertEquals(LocalDateTime.of(2026, 9, 4, 14, 0), result.getFrom());
+        assertEquals(LocalDateTime.of(2026, 9, 4, 16, 0), result.getTo());
+    }
+
+    @Test
+    public void parseEvent_missingFrom_throwsTodException() {
+        assertThrows(TodException.class,
+                () -> Parser.parseEvent("event project meeting"));
+    }
+
+    @Test
+    public void parseEvent_missingTo_throwsTodException() {
+        assertThrows(TodException.class,
+                () -> Parser.parseEvent("event project meeting /from 2026-09-04 1400"));
+    }
+
+    @Test
+    public void parseEvent_endBeforeStart_throwsTodException() {
+        assertThrows(TodException.class,
+                () -> Parser.parseEvent(
+                        "event project meeting /from 2026-09-04 1600 /to 2026-09-04 1400"));
+    }
+
+    @Test
+    public void parseDate_validInput_returnsLocalDate() throws TodException {
+        LocalDate result = Parser.parseDate("on 2026-09-04");
+
+        assertEquals(LocalDate.of(2026, 9, 4), result);
+    }
+
+    @Test
+    public void parseDate_invalidInput_throwsTodException() {
+        assertThrows(TodException.class,
+                () -> Parser.parseDate("on Friday"));
+    }
+}
