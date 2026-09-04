@@ -2,35 +2,24 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 /** Runs the Todd task-management chatbot. */
 public class Todd {
     public static void main(String[] args) {
-        String line = "\t____________________________________________________________";
-        String banner = "   ______          __     __\n"
-                + "  /_  __/___  ____/ /____/ /\n"
-                + "   / / / __ \\/ __  / __  / \n"
-                + "  / / / /_/ / /_/ / /_/ /  \n"
-                + " /_/  \\____/\\__,_/\\__,_/   \n";
+        Ui ui = new Ui();
         Storage storage = new Storage(Path.of("data", "todd.txt"));
         ArrayList<Task> list;
 
-        System.out.println(banner);
-        System.out.println("Hello There! I'm Todd, a NPC Chatbot :P\nWhat can I do for you today?");
+        ui.showWelcome();
 
         try {
             list = storage.load();
         } catch (TodException e) {
-            System.out.println(line);
-            System.out.println("\t " + e.getMessage());
-            System.out.println("\t Todd will start with an empty task list.");
-            System.out.println(line);
+            ui.showLoadingError(e.getMessage());
             list = new ArrayList<>();
         }
 
-        Scanner sc = new Scanner(System.in);
-        String txt = sc.nextLine();
+        String txt = ui.readCommand();
 
         while (true) {
             try {
@@ -51,20 +40,11 @@ public class Todd {
 
                 switch (command) {
                     case BYE:
-                        System.out.println("Noo don't go, come back. Ok fine bye. See you soon.");
+                        ui.showGoodbye();
                         return;
 
                     case LIST:
-                        System.out.println(line);
-                        if (list.isEmpty()) {
-                            System.out.println("\t Your list is empty! Add some tasks first.");
-                        } else {
-                            System.out.println("\t Here are the tasks in your list:");
-                            for (int i = 0; i < list.size(); i++) {
-                                System.out.println("\t  " + (i + 1) + "." + list.get(i));
-                            }
-                        }
-                        System.out.println(line);
+                        ui.showTaskList(list);
                         break;
 
                     case MARK: {
@@ -74,10 +54,7 @@ public class Todd {
                         }
                         list.get(index).markAsDone();
                         storage.save(list);
-                        System.out.println(line);
-                        System.out.println("\t Hooray! You are on fire! Task crossed off.");
-                        System.out.println("\t    " + list.get(index));
-                        System.out.println(line);
+                        ui.showMarked(list.get(index));
                         break;
                     }
 
@@ -88,10 +65,7 @@ public class Todd {
                         }
                         list.get(index).markAsUndone();
                         storage.save(list);
-                        System.out.println(line);
-                        System.out.println("\t Oh no! Okay unmarked.");
-                        System.out.println("\t    " + list.get(index));
-                        System.out.println(line);
+                        ui.showUnmarked(list.get(index));
                         break;
                     }
 
@@ -103,7 +77,7 @@ public class Todd {
                         Task newTask = new Todo(description);
                         list.add(newTask);
                         storage.save(list);
-                        printAdded(line, newTask, list.size());
+                        ui.showAdded(newTask, list.size());
                         break;
                     }
 
@@ -124,7 +98,7 @@ public class Todd {
                         Task newTask = new Deadline(description, by);
                         list.add(newTask);
                         storage.save(list);
-                        printAdded(line, newTask, list.size());
+                        ui.showAdded(newTask, list.size());
                         break;
                     }
 
@@ -155,7 +129,7 @@ public class Todd {
                         Task newTask = new Event(description, from, to);
                         list.add(newTask);
                         storage.save(list);
-                        printAdded(line, newTask, list.size());
+                        ui.showAdded(newTask, list.size());
                         break;
                     }
 
@@ -163,18 +137,23 @@ public class Todd {
                         int index = parseIndex(txt, "delete", list.size());
                         Task removed = list.remove(index);
                         storage.save(list);
-                        System.out.println(line);
-                        System.out.println("\t Noted. I've removed this task:");
-                        System.out.println("\t   " + removed);
-                        System.out.println("\t Now you have " + list.size() + " tasks in the list.");
-                        System.out.println(line);
+                        ui.showDeleted(removed, list.size());
                         break;
                     }
 
                     case ON: {
                         String dateText = txt.length() > 2 ? txt.substring(2).trim() : "";
                         LocalDate date = DateTimeUtil.parseDate(dateText);
-                        printTasksOnDate(line, list, date);
+                        ArrayList<Task> matchingTasks = new ArrayList<>();
+                        ArrayList<Integer> taskNumbers = new ArrayList<>();
+                        for (int i = 0; i < list.size(); i++) {
+                            Task task = list.get(i);
+                            if (occursOn(task, date)) {
+                                matchingTasks.add(task);
+                                taskNumbers.add(i + 1);
+                            }
+                        }
+                        ui.showTasksOnDate(date, matchingTasks, taskNumbers);
                         break;
                     }
 
@@ -184,12 +163,10 @@ public class Todd {
                 }
 
             } catch (TodException e) {
-                System.out.println(line);
-                System.out.println("\t " + e.getMessage());
-                System.out.println(line);
+                ui.showError(e.getMessage());
             }
 
-            txt = sc.nextLine();
+            txt = ui.readCommand();
         }
     }
 
@@ -209,32 +186,6 @@ public class Todd {
             throw new TodException("Am I tripping cuz that task number literally doesn't exist!");
         }
         return index;
-    }
-
-    private static void printAdded(String line, Task newTask, int totalTasks) {
-        System.out.println(line);
-        System.out.println("\t Got it. I've added this task:");
-        System.out.println("\t   " + newTask);
-        System.out.println("\t Now you have " + totalTasks + " tasks in the list.");
-        System.out.println(line);
-    }
-
-    /** Prints deadlines due and events taking place on the requested date. */
-    private static void printTasksOnDate(String line, ArrayList<Task> tasks, LocalDate date) {
-        System.out.println(line);
-        System.out.println("\t Deadlines and events on " + DateTimeUtil.format(date) + ":");
-        boolean foundTask = false;
-        for (int i = 0; i < tasks.size(); i++) {
-            Task task = tasks.get(i);
-            if (occursOn(task, date)) {
-                System.out.println("\t  " + (i + 1) + "." + task);
-                foundTask = true;
-            }
-        }
-        if (!foundTask) {
-            System.out.println("\t You have no deadlines or events on that date.");
-        }
-        System.out.println(line);
     }
 
     /** Returns whether a deadline or event belongs in a date search result. */
