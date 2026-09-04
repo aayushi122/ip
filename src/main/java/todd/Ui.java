@@ -42,7 +42,7 @@ public class Ui {
 
     /** Returns an error that prevented saved tasks from being loaded. */
     public String formatLoadingError(String message) {
-        return surround(message + "\nTodd will start with an empty task list.");
+        return surround(message, "Todd will start with an empty task list.");
     }
 
     /** Returns a user-facing command error. */
@@ -63,24 +63,28 @@ public class Ui {
 
     /** Returns confirmation that the specified task was marked. */
     public String formatMarked(Task task) {
-        return surround("Hooray! You are on fire! Task crossed off.\n   " + task);
+        return surround("Hooray! You are on fire! Task crossed off.", "   " + task);
     }
 
     /** Returns confirmation that the specified task was unmarked. */
     public String formatUnmarked(Task task) {
-        return surround("Oh no! Okay unmarked.\n   " + task);
+        return surround("Oh no! Okay unmarked.", "   " + task);
     }
 
     /** Returns the added task and the updated total number of tasks. */
     public String formatAdded(Task task, int totalTasks) {
-        return surround("Got it. I've added this task:\n   " + task
-                + "\nNow you have " + totalTasks + " tasks in the list.");
+        return surround(
+                "Got it. I've added this task:",
+                "   " + task,
+                "Now you have " + totalTasks + " tasks in the list.");
     }
 
     /** Returns the deleted task and the updated total number of tasks. */
     public String formatDeleted(Task task, int totalTasks) {
-        return surround("Noted. I've removed this task:\n   " + task
-                + "\nNow you have " + totalTasks + " tasks in the list.");
+        return surround(
+                "Noted. I've removed this task:",
+                "   " + task,
+                "Now you have " + totalTasks + " tasks in the list.");
     }
 
     /** Returns tasks selected by a date search together with their original list numbers. */
@@ -114,7 +118,8 @@ public class Ui {
         }
     }
 
-    private String surround(String content) {
-        return LINE + "\n" + content + "\n" + LINE;
+    /** Wraps any number of response lines between visual separators. */
+    private String surround(String... lines) {
+        return LINE + "\n" + String.join("\n", lines) + "\n" + LINE;
     }
 }
