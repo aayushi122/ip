@@ -30,6 +30,8 @@ public final class Parser {
             return Command.DELETE;
         case "on":
             return Command.ON;
+        case "find":
+            return Command.FIND;
         default:
             return Command.UNKNOWN;
         }
@@ -121,6 +123,15 @@ public final class Parser {
     /** Parses the date argument of an on command. */
     public static LocalDate parseDate(String input) throws TodException {
         return DateTimeUtil.parseDate(getArguments(input, "on"));
+    }
+
+    /** Parses and validates the keyword of a find command. */
+    public static String parseKeyword(String input) throws TodException {
+        String keyword = getArguments(input, "find");
+        if (keyword.isEmpty()) {
+            throw new TodException("Wait you didn't give me a keyword to find.");
+        }
+        return keyword;
     }
 
     /** Returns the trimmed part of an input line that follows its command word. */
