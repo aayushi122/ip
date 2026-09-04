@@ -1,0 +1,34 @@
+.root {
+    -fx-background-color: #f4f6fa;
+    -fx-font-family: "System";
+    -fx-font-size: 14px;
+}
+
+.dialog-container {
+    -fx-padding: 16px;
+    -fx-background-color: #f4f6fa;
+}
+
+.input-row {
+    -fx-padding: 12px;
+    -fx-background-color: white;
+}
+
+.speaker {
+    -fx-font-weight: bold;
+    -fx-min-width: 42px;
+}
+
+.message {
+    -fx-background-radius: 10px;
+    -fx-padding: 10px;
+    -fx-max-width: 285px;
+}
+
+.user-dialog .message {
+    -fx-background-color: #dce8ff;
+}
+
+.todd-dialog .message {
+    -fx-background-color: white;
+}
