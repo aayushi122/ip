@@ -1,22 +1,22 @@
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.List;
 
 /** Runs the Todd task-management chatbot. */
 public class Todd {
     public static void main(String[] args) {
         Ui ui = new Ui();
         Storage storage = new Storage(Path.of("data", "todd.txt"));
-        ArrayList<Task> list;
+        TaskList tasks;
 
         ui.showWelcome();
 
         try {
-            list = storage.load();
+            tasks = new TaskList(storage.load());
         } catch (TodException e) {
             ui.showLoadingError(e.getMessage());
-            list = new ArrayList<>();
+            tasks = new TaskList();
         }
 
         String txt = ui.readCommand();
@@ -44,28 +44,22 @@ public class Todd {
                         return;
 
                     case LIST:
-                        ui.showTaskList(list);
+                        ui.showTaskList(tasks.asList());
                         break;
 
                     case MARK: {
-                        int index = parseIndex(txt, "mark", list.size());
-                        if (list.get(index).isDone()) {
-                            throw new TodException("That task is already marked.");
-                        }
-                        list.get(index).markAsDone();
-                        storage.save(list);
-                        ui.showMarked(list.get(index));
+                        int index = parseIndex(txt, "mark", tasks.size());
+                        Task task = tasks.mark(index);
+                        storage.save(tasks.asList());
+                        ui.showMarked(task);
                         break;
                     }
 
                     case UNMARK: {
-                        int index = parseIndex(txt, "unmark", list.size());
-                        if (!list.get(index).isDone()) {
-                            throw new TodException("That task is already unmarked.");
-                        }
-                        list.get(index).markAsUndone();
-                        storage.save(list);
-                        ui.showUnmarked(list.get(index));
+                        int index = parseIndex(txt, "unmark", tasks.size());
+                        Task task = tasks.unmark(index);
+                        storage.save(tasks.asList());
+                        ui.showUnmarked(task);
                         break;
                     }
 
@@ -75,9 +69,9 @@ public class Todd {
                             throw new TodException("Wait you didn't even tell me what is the to-do");
                         }
                         Task newTask = new Todo(description);
-                        list.add(newTask);
-                        storage.save(list);
-                        ui.showAdded(newTask, list.size());
+                        tasks.add(newTask);
+                        storage.save(tasks.asList());
+                        ui.showAdded(newTask, tasks.size());
                         break;
                     }
 
@@ -96,9 +90,9 @@ public class Todd {
                         }
                         LocalDateTime by = DateTimeUtil.parseDateTime(parts[1].trim());
                         Task newTask = new Deadline(description, by);
-                        list.add(newTask);
-                        storage.save(list);
-                        ui.showAdded(newTask, list.size());
+                        tasks.add(newTask);
+                        storage.save(tasks.asList());
+                        ui.showAdded(newTask, tasks.size());
                         break;
                     }
 
@@ -127,33 +121,25 @@ public class Todd {
                             throw new TodException("The /to date and time cannot be before /from.");
                         }
                         Task newTask = new Event(description, from, to);
-                        list.add(newTask);
-                        storage.save(list);
-                        ui.showAdded(newTask, list.size());
+                        tasks.add(newTask);
+                        storage.save(tasks.asList());
+                        ui.showAdded(newTask, tasks.size());
                         break;
                     }
 
                     case DELETE: {
-                        int index = parseIndex(txt, "delete", list.size());
-                        Task removed = list.remove(index);
-                        storage.save(list);
-                        ui.showDeleted(removed, list.size());
+                        int index = parseIndex(txt, "delete", tasks.size());
+                        Task removed = tasks.delete(index);
+                        storage.save(tasks.asList());
+                        ui.showDeleted(removed, tasks.size());
                         break;
                     }
 
                     case ON: {
                         String dateText = txt.length() > 2 ? txt.substring(2).trim() : "";
                         LocalDate date = DateTimeUtil.parseDate(dateText);
-                        ArrayList<Task> matchingTasks = new ArrayList<>();
-                        ArrayList<Integer> taskNumbers = new ArrayList<>();
-                        for (int i = 0; i < list.size(); i++) {
-                            Task task = list.get(i);
-                            if (occursOn(task, date)) {
-                                matchingTasks.add(task);
-                                taskNumbers.add(i + 1);
-                            }
-                        }
-                        ui.showTasksOnDate(date, matchingTasks, taskNumbers);
+                        List<Integer> taskNumbers = tasks.findTaskNumbersOn(date);
+                        ui.showTasksOnDate(date, tasks.asList(), taskNumbers);
                         break;
                     }
 
@@ -188,18 +174,4 @@ public class Todd {
         return index;
     }
 
-    /** Returns whether a deadline or event belongs in a date search result. */
-    private static boolean occursOn(Task task, LocalDate date) {
-        if (task instanceof Deadline) {
-            Deadline deadline = (Deadline) task;
-            return deadline.getBy().toLocalDate().equals(date);
-        }
-        if (task instanceof Event) {
-            Event event = (Event) task;
-            LocalDate from = event.getFrom().toLocalDate();
-            LocalDate to = event.getTo().toLocalDate();
-            return !date.isBefore(from) && !date.isAfter(to);
-        }
-        return false;
-    }
 }

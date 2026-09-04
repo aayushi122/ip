@@ -91,17 +91,17 @@ public class Ui {
      * Shows tasks selected by a date search together with their original list numbers.
      *
      * @param date date requested by the user
-     * @param tasks matching deadlines and events
-     * @param taskNumbers one-based positions of the matching tasks in the full task list
+     * @param tasks complete task list
+     * @param taskNumbers one-based positions of matching tasks in the full task list
      */
     public void showTasksOnDate(LocalDate date, List<Task> tasks, List<Integer> taskNumbers) {
         showLine();
         System.out.println("\t Deadlines and events on " + DateTimeUtil.format(date) + ":");
-        if (tasks.isEmpty()) {
+        if (taskNumbers.isEmpty()) {
             System.out.println("\t You have no deadlines or events on that date.");
         } else {
-            for (int i = 0; i < tasks.size(); i++) {
-                System.out.println("\t  " + taskNumbers.get(i) + "." + tasks.get(i));
+            for (int taskNumber : taskNumbers) {
+                System.out.println("\t  " + taskNumber + "." + tasks.get(taskNumber - 1));
             }
         }
         showLine();
