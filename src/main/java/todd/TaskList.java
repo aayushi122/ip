@@ -86,6 +86,25 @@ public class TaskList {
                 .toList();
     }
 
+    /**
+     * Finds incomplete deadlines and events occurring within an inclusive date window.
+     * Original one-based task numbers are returned for use with other commands.
+     */
+    public List<Integer> findUpcomingTaskNumbers(LocalDate startDate, int numberOfDays) {
+        assert startDate != null : "reminder start date must not be null";
+        assert numberOfDays > 0 : "reminder window must contain at least one day";
+
+        LocalDate endDate = startDate.plusDays(numberOfDays - 1L);
+        ArrayList<Integer> taskNumbers = new ArrayList<>();
+        for (int i = 0; i < tasks.size(); i++) {
+            Task task = tasks.get(i);
+            if (!task.isDone() && occursBetween(task, startDate, endDate)) {
+                taskNumbers.add(i + 1);
+            }
+        }
+        return taskNumbers;
+    }
+
     /** Verifies the caller supplied an index that refers to an existing task. */
     private void assertValidIndex(int index) {
         assert index >= 0 && index < tasks.size() : "task index must refer to an existing task";
@@ -102,6 +121,21 @@ public class TaskList {
             LocalDate from = event.getFrom().toLocalDate();
             LocalDate to = event.getTo().toLocalDate();
             return !date.isBefore(from) && !date.isAfter(to);
+        }
+        return false;
+    }
+
+    /** Returns whether a deadline or event intersects an inclusive date range. */
+    private boolean occursBetween(Task task, LocalDate startDate, LocalDate endDate) {
+        if (task instanceof Deadline) {
+            LocalDate dueDate = ((Deadline) task).getBy().toLocalDate();
+            return !dueDate.isBefore(startDate) && !dueDate.isAfter(endDate);
+        }
+        if (task instanceof Event) {
+            Event event = (Event) task;
+            LocalDate eventStart = event.getFrom().toLocalDate();
+            LocalDate eventEnd = event.getTo().toLocalDate();
+            return !eventEnd.isBefore(startDate) && !eventStart.isAfter(endDate);
         }
         return false;
     }

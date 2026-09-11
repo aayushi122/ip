@@ -32,6 +32,10 @@ public final class Parser {
                 return Command.ON;
             case "find":
                 return Command.FIND;
+            case "help":
+                return Command.HELP;
+            case "reminders":
+                return Command.REMINDERS;
             default:
                 return Command.UNKNOWN;
         }

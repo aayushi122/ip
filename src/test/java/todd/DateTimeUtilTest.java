@@ -25,6 +25,22 @@ public class DateTimeUtilTest {
     }
 
     @Test
+    public void parseDateTime_weekdayAndTime_returnsNextOccurrence() throws TodException {
+        LocalDateTime result = DateTimeUtil.parseDateTime(
+                "Mon 1430", LocalDate.of(2026, 9, 11));
+
+        assertEquals(LocalDateTime.of(2026, 9, 14, 14, 30), result);
+    }
+
+    @Test
+    public void parseDateTime_sameWeekday_returnsFollowingWeek() throws TodException {
+        LocalDateTime result = DateTimeUtil.parseDateTime(
+                "Friday", LocalDate.of(2026, 9, 11));
+
+        assertEquals(LocalDateTime.of(2026, 9, 18, 0, 0), result);
+    }
+
+    @Test
     public void parseDateTime_invalidDate_throwsTodException() {
         assertThrows(TodException.class, () ->
                 DateTimeUtil.parseDateTime("2026-02-30"));
@@ -35,6 +51,14 @@ public class DateTimeUtilTest {
         LocalDate result = DateTimeUtil.parseDate("2026-09-04");
 
         assertEquals(LocalDate.of(2026, 9, 4), result);
+    }
+
+    @Test
+    public void parseDate_todayAndTomorrow_returnRelativeDates() throws TodException {
+        LocalDate referenceDate = LocalDate.of(2026, 9, 11);
+
+        assertEquals(referenceDate, DateTimeUtil.parseDate("today", referenceDate));
+        assertEquals(referenceDate.plusDays(1), DateTimeUtil.parseDate("tomorrow", referenceDate));
     }
 
     @Test

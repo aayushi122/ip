@@ -40,6 +40,18 @@ public class Ui {
         return "Noo don't go, come back. Ok fine bye. See you soon.";
     }
 
+    /** Returns a concise guide to the commands Todd recognizes. */
+    public String formatHelp() {
+        return surround(
+                "Here are the commands I understand:",
+                "todo DESCRIPTION",
+                "deadline DESCRIPTION /by DATE [HHmm]",
+                "event DESCRIPTION /from DATE [HHmm] /to DATE [HHmm]",
+                "list | mark NUMBER | unmark NUMBER | delete NUMBER",
+                "find KEYWORD | on DATE | reminders | help | bye",
+                "DATE can be yyyy-MM-dd, today, tomorrow, or a weekday such as Mon.");
+    }
+
     /** Returns an error that prevented saved tasks from being loaded. */
     public String formatLoadingError(String message) {
         return surround(message, "Todd will start with an empty task list.");
@@ -109,6 +121,25 @@ public class Ui {
 
         StringBuilder content = new StringBuilder("Here are the matching tasks in your list:");
         appendNumberedTasks(content, matchingTasks);
+        return surround(content.toString());
+    }
+
+    /** Returns incomplete deadlines and events occurring in the reminder window. */
+    public String formatReminders(LocalDate startDate, int numberOfDays,
+                                  List<Task> tasks, List<Integer> taskNumbers) {
+        LocalDate endDate = startDate.plusDays(numberOfDays - 1L);
+        StringBuilder content = new StringBuilder("Upcoming incomplete deadlines and events from ")
+                .append(DateTimeUtil.format(startDate))
+                .append(" to ")
+                .append(DateTimeUtil.format(endDate))
+                .append(":");
+        if (taskNumbers.isEmpty()) {
+            content.append("\nYou have no upcoming deadlines or events.");
+        } else {
+            for (int taskNumber : taskNumbers) {
+                content.append("\n ").append(taskNumber).append(".").append(tasks.get(taskNumber - 1));
+            }
+        }
         return surround(content.toString());
     }
 

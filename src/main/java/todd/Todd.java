@@ -7,6 +7,7 @@ import java.util.List;
 /** Runs the Todd task-management chatbot and processes user commands. */
 public class Todd {
     private static final Path DEFAULT_DATA_PATH = Path.of("data", "todd.txt");
+    private static final int REMINDER_WINDOW_DAYS = 7;
 
     private final Ui ui;
     private final Storage storage;
@@ -88,6 +89,8 @@ public class Todd {
             case DELETE -> deleteTask(input);
             case ON -> findTasksOnDate(input);
             case FIND -> findTasksByKeyword(input);
+            case HELP -> ui.formatHelp();
+            case REMINDERS -> showReminders();
             case UNKNOWN -> throw new TodException("What does that mean dawg");
         };
     }
@@ -134,6 +137,13 @@ public class Todd {
     private String findTasksByKeyword(String input) throws TodException {
         String keyword = Parser.parseKeyword(input);
         return ui.formatMatchingTasks(tasks.find(keyword));
+    }
+
+    /** Shows incomplete deadlines and events occurring during the next seven days. */
+    private String showReminders() {
+        LocalDate startDate = LocalDate.now();
+        List<Integer> taskNumbers = tasks.findUpcomingTaskNumbers(startDate, REMINDER_WINDOW_DAYS);
+        return ui.formatReminders(startDate, REMINDER_WINDOW_DAYS, tasks.asList(), taskNumbers);
     }
 
     private void saveTasks() throws TodException {
