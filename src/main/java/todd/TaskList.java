@@ -81,13 +81,9 @@ public class TaskList {
     /** Returns tasks whose descriptions contain the specified keyword, preserving their order. */
     public List<Task> find(String keyword) {
         assert keyword != null : "search keyword must not be null";
-        ArrayList<Task> matchingTasks = new ArrayList<>();
-        for (Task task : tasks) {
-            if (task.getDescription().contains(keyword)) {
-                matchingTasks.add(task);
-            }
-        }
-        return matchingTasks;
+        return tasks.stream()
+                .filter(task -> task.getDescription().contains(keyword))
+                .toList();
     }
 
     /** Verifies the caller supplied an index that refers to an existing task. */

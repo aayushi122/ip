@@ -56,10 +56,9 @@ public class Storage {
     public void save(List<Task> tasks) throws TodException {
         try {
             createParentDirectory();
-            List<String> lines = new ArrayList<>();
-            for (Task task : tasks) {
-                lines.add(formatTask(task));
-            }
+            List<String> lines = tasks.stream()
+                    .map(this::formatTask)
+                    .toList();
             Files.write(filePath, lines, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new TodException("I couldn't save tasks to " + filePath + ".");
