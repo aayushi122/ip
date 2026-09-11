@@ -32,4 +32,21 @@ public class ToddTest {
 
         assertTrue(response.contains("What does that mean dawg"));
     }
+
+    @Test
+    public void getResponse_markThenDelete_updatesStoredTaskList() {
+        Path dataPath = tempDirectory.resolve("todd.txt");
+        Todd todd = new Todd(dataPath);
+        todd.getResponse("todo read JavaFX guide");
+
+        String markedResponse = todd.getResponse("mark 1");
+        String savedMarkedTask = new Todd(dataPath).getResponse("list");
+        String deletedResponse = todd.getResponse("delete 1");
+        String savedEmptyList = new Todd(dataPath).getResponse("list");
+
+        assertTrue(markedResponse.contains("[T][X] read JavaFX guide"));
+        assertTrue(savedMarkedTask.contains("[T][X] read JavaFX guide"));
+        assertTrue(deletedResponse.contains("read JavaFX guide"));
+        assertTrue(savedEmptyList.contains("Your list is empty"));
+    }
 }
