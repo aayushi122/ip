@@ -49,4 +49,15 @@ public class ToddTest {
         assertTrue(deletedResponse.contains("read JavaFX guide"));
         assertTrue(savedEmptyList.contains("Your list is empty"));
     }
+
+    @Test
+    public void getResponse_help_returnsCommandGuide() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+
+        String response = todd.getResponse("help");
+
+        assertTrue(response.contains("deadline DESCRIPTION /by DATE [HHmm]"));
+        assertTrue(response.contains("reminders | help | bye"));
+        assertTrue(response.contains("today, tomorrow, or a weekday"));
+    }
 }

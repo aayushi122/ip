@@ -1,11 +1,14 @@
 package todd;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.time.format.TextStyle;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Locale;
 
 /** Parses user-entered dates and formats them for Todd's responses. */
@@ -13,8 +16,8 @@ public final class DateTimeUtil {
     private static final DateTimeFormatter INPUT_DATE = DateTimeFormatter
             .ofPattern("uuuu-MM-dd")
             .withResolverStyle(ResolverStyle.STRICT);
-    private static final DateTimeFormatter INPUT_DATE_TIME = DateTimeFormatter
-            .ofPattern("uuuu-MM-dd HHmm")
+    private static final DateTimeFormatter INPUT_TIME = DateTimeFormatter
+            .ofPattern("HHmm")
             .withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter
             .ofPattern("MMM dd uuuu", Locale.ENGLISH);
@@ -33,14 +36,18 @@ public final class DateTimeUtil {
      * @throws TodException if the input is not a real date in a supported format
      */
     public static LocalDateTime parseDateTime(String input) throws TodException {
+        return parseDateTime(input, LocalDate.now());
+    }
+
+    /** Parses a date-time relative to a supplied date, allowing deterministic tests. */
+    static LocalDateTime parseDateTime(String input, LocalDate today) throws TodException {
+        String[] parts = input.trim().split("\\s+", 2);
         try {
-            return LocalDate.parse(input, INPUT_DATE).atStartOfDay();
-        } catch (DateTimeParseException dateException) {
-            try {
-                return LocalDateTime.parse(input, INPUT_DATE_TIME);
-            } catch (DateTimeParseException dateTimeException) {
-                throw new TodException("Please use a valid date in yyyy-MM-dd or yyyy-MM-dd HHmm format.");
-            }
+            LocalDate date = parseDateToken(parts[0], today);
+            LocalTime time = parts.length == 1 ? LocalTime.MIDNIGHT : LocalTime.parse(parts[1], INPUT_TIME);
+            return date.atTime(time);
+        } catch (DateTimeParseException e) {
+            throw invalidDateTime();
         }
     }
 
@@ -52,11 +59,46 @@ public final class DateTimeUtil {
      * @throws TodException if the input is not a real date in the required format
      */
     public static LocalDate parseDate(String input) throws TodException {
+        return parseDate(input, LocalDate.now());
+    }
+
+    /** Parses a date relative to a supplied date, allowing deterministic tests. */
+    static LocalDate parseDate(String input, LocalDate today) throws TodException {
+        try {
+            return parseDateToken(input.trim(), today);
+        } catch (DateTimeParseException e) {
+            throw new TodException(
+                    "Please use yyyy-MM-dd, today, tomorrow, or a weekday such as Mon.");
+        }
+    }
+
+    /** Parses an absolute date or a supported date word relative to today. */
+    private static LocalDate parseDateToken(String input, LocalDate today) {
         try {
             return LocalDate.parse(input, INPUT_DATE);
         } catch (DateTimeParseException e) {
-            throw new TodException("Please use a valid date in yyyy-MM-dd format.");
+            String normalizedInput = input.toLowerCase(Locale.ENGLISH);
+            if (normalizedInput.equals("today")) {
+                return today;
+            }
+            if (normalizedInput.equals("tomorrow")) {
+                return today.plusDays(1);
+            }
+
+            for (DayOfWeek day : DayOfWeek.values()) {
+                String shortName = day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).toLowerCase(Locale.ENGLISH);
+                String fullName = day.getDisplayName(TextStyle.FULL, Locale.ENGLISH).toLowerCase(Locale.ENGLISH);
+                if (normalizedInput.equals(shortName) || normalizedInput.equals(fullName)) {
+                    return today.with(TemporalAdjusters.next(day));
+                }
+            }
+            throw e;
         }
+    }
+
+    private static TodException invalidDateTime() {
+        return new TodException("Please use yyyy-MM-dd, today, tomorrow, or a weekday such as Mon, "
+                + "optionally followed by a time in HHmm format.");
     }
 
     /** Formats a stored date and omits the time when it is midnight. */

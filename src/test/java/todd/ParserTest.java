@@ -22,6 +22,8 @@ public class ParserTest {
         assertEquals(Command.DELETE, Parser.parse("delete 1"));
         assertEquals(Command.ON, Parser.parse("on 2026-09-04"));
         assertEquals(Command.FIND, Parser.parse("find book"));
+        assertEquals(Command.HELP, Parser.parse("help"));
+        assertEquals(Command.REMINDERS, Parser.parse("reminders"));
     }
 
     @Test
@@ -120,7 +122,7 @@ public class ParserTest {
     @Test
     public void parseDate_invalidInput_throwsTodException() {
         assertThrows(TodException.class, () ->
-                Parser.parseDate("on Friday"));
+                Parser.parseDate("on someday"));
     }
 
     @Test

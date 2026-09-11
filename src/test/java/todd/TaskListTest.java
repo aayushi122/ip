@@ -124,4 +124,24 @@ public class TaskListTest {
 
         assertEquals(List.of(), taskList.find("exercise"));
     }
+
+    @Test
+    public void findUpcomingTaskNumbers_mixedTasks_returnsIncompleteTasksInWindow() {
+        LocalDate startDate = LocalDate.of(2026, 9, 11);
+        Deadline completedDeadline = new Deadline(
+                "already submitted", LocalDateTime.of(2026, 9, 13, 12, 0));
+        completedDeadline.markAsDone();
+        TaskList taskList = new TaskList(List.of(
+                new Todo("read book"),
+                new Deadline("due today", LocalDateTime.of(2026, 9, 11, 23, 59)),
+                new Deadline("due on last day", LocalDateTime.of(2026, 9, 17, 12, 0)),
+                new Deadline("due later", LocalDateTime.of(2026, 9, 18, 12, 0)),
+                new Event("ongoing camp", LocalDateTime.of(2026, 9, 10, 9, 0),
+                        LocalDateTime.of(2026, 9, 12, 17, 0)),
+                completedDeadline));
+
+        List<Integer> result = taskList.findUpcomingTaskNumbers(startDate, 7);
+
+        assertEquals(List.of(2, 3, 5), result);
+    }
 }
