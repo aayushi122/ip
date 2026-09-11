@@ -77,69 +77,63 @@ public class Todd {
     }
 
     private String execute(Command command, String input) throws TodException {
-        switch (command) {
-            case BYE:
-                return ui.formatGoodbye();
+        return switch (command) {
+            case BYE -> ui.formatGoodbye();
+            case LIST -> ui.formatTaskList(tasks.asList());
+            case MARK -> markTask(input);
+            case UNMARK -> unmarkTask(input);
+            case TODO -> addTask(Parser.parseTodo(input));
+            case DEADLINE -> addTask(Parser.parseDeadline(input));
+            case EVENT -> addTask(Parser.parseEvent(input));
+            case DELETE -> deleteTask(input);
+            case ON -> findTasksOnDate(input);
+            case FIND -> findTasksByKeyword(input);
+            case UNKNOWN -> throw new TodException("What does that mean dawg");
+        };
+    }
 
-            case LIST:
-                return ui.formatTaskList(tasks.asList());
+    /** Marks the task selected by a mark command and saves the updated list. */
+    private String markTask(String input) throws TodException {
+        int index = Parser.parseIndex(input, "mark", tasks.size());
+        Task task = tasks.mark(index);
+        saveTasks();
+        return ui.formatMarked(task);
+    }
 
-            case MARK: {
-                int index = Parser.parseIndex(input, "mark", tasks.size());
-                Task task = tasks.mark(index);
-                saveTasks();
-                return ui.formatMarked(task);
-            }
+    /** Unmarks the task selected by an unmark command and saves the updated list. */
+    private String unmarkTask(String input) throws TodException {
+        int index = Parser.parseIndex(input, "unmark", tasks.size());
+        Task task = tasks.unmark(index);
+        saveTasks();
+        return ui.formatUnmarked(task);
+    }
 
-            case UNMARK: {
-                int index = Parser.parseIndex(input, "unmark", tasks.size());
-                Task task = tasks.unmark(index);
-                saveTasks();
-                return ui.formatUnmarked(task);
-            }
+    /** Adds a parsed task, saves it, and formats a confirmation. */
+    private String addTask(Task task) throws TodException {
+        tasks.add(task);
+        saveTasks();
+        return ui.formatAdded(task, tasks.size());
+    }
 
-            case TODO: {
-                Task newTask = Parser.parseTodo(input);
-                tasks.add(newTask);
-                saveTasks();
-                return ui.formatAdded(newTask, tasks.size());
-            }
+    /** Deletes the task selected by a delete command and saves the updated list. */
+    private String deleteTask(String input) throws TodException {
+        int index = Parser.parseIndex(input, "delete", tasks.size());
+        Task removed = tasks.delete(index);
+        saveTasks();
+        return ui.formatDeleted(removed, tasks.size());
+    }
 
-            case DEADLINE: {
-                Task newTask = Parser.parseDeadline(input);
-                tasks.add(newTask);
-                saveTasks();
-                return ui.formatAdded(newTask, tasks.size());
-            }
+    /** Formats tasks that occur on the date supplied by an on command. */
+    private String findTasksOnDate(String input) throws TodException {
+        LocalDate date = Parser.parseDate(input);
+        List<Integer> taskNumbers = tasks.findTaskNumbersOn(date);
+        return ui.formatTasksOnDate(date, tasks.asList(), taskNumbers);
+    }
 
-            case EVENT: {
-                Task newTask = Parser.parseEvent(input);
-                tasks.add(newTask);
-                saveTasks();
-                return ui.formatAdded(newTask, tasks.size());
-            }
-
-            case DELETE: {
-                int index = Parser.parseIndex(input, "delete", tasks.size());
-                Task removed = tasks.delete(index);
-                saveTasks();
-                return ui.formatDeleted(removed, tasks.size());
-            }
-
-            case ON: {
-                LocalDate date = Parser.parseDate(input);
-                List<Integer> taskNumbers = tasks.findTaskNumbersOn(date);
-                return ui.formatTasksOnDate(date, tasks.asList(), taskNumbers);
-            }
-
-            case FIND:
-                String keyword = Parser.parseKeyword(input);
-                return ui.formatMatchingTasks(tasks.find(keyword));
-
-            case UNKNOWN:
-            default:
-                throw new TodException("What does that mean dawg");
-        }
+    /** Formats tasks matching the keyword supplied by a find command. */
+    private String findTasksByKeyword(String input) throws TodException {
+        String keyword = Parser.parseKeyword(input);
+        return ui.formatMatchingTasks(tasks.find(keyword));
     }
 
     private void saveTasks() throws TodException {
