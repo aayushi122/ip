@@ -29,6 +29,15 @@ public class TaskListTest {
     }
 
     @Test
+    public void delete_invalidIndex_throwsAssertionError() {
+        TaskList taskList = new TaskList(List.of(new Todo("read book")));
+
+        AssertionError error = assertThrows(AssertionError.class, () -> taskList.delete(1));
+
+        assertEquals("task index must refer to an existing task", error.getMessage());
+    }
+
+    @Test
     public void mark_unmarkedTask_marksAndReturnsTask() throws TodException {
         Todo task = new Todo("read book");
         TaskList taskList = new TaskList(List.of(task));

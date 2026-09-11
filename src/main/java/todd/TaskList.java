@@ -15,6 +15,7 @@ public class TaskList {
 
     /** Creates a task list containing tasks loaded from storage. */
     public TaskList(List<Task> tasks) {
+        assert tasks != null : "initial task list must not be null";
         this.tasks = new ArrayList<>(tasks);
     }
 
@@ -30,16 +31,19 @@ public class TaskList {
 
     /** Adds the specified task to the end of the list. */
     public void add(Task task) {
+        assert task != null : "task to add must not be null";
         tasks.add(task);
     }
 
     /** Removes and returns the task at the specified zero-based index. */
     public Task delete(int index) {
+        assertValidIndex(index);
         return tasks.remove(index);
     }
 
     /** Marks one task and prevents an already-completed task from being marked again. */
     public Task mark(int index) throws TodException {
+        assertValidIndex(index);
         Task task = tasks.get(index);
         if (task.isDone()) {
             throw new TodException("That task is already marked.");
@@ -50,6 +54,7 @@ public class TaskList {
 
     /** Unmarks one task and prevents an incomplete task from being unmarked again. */
     public Task unmark(int index) throws TodException {
+        assertValidIndex(index);
         Task task = tasks.get(index);
         if (!task.isDone()) {
             throw new TodException("That task is already unmarked.");
@@ -63,6 +68,7 @@ public class TaskList {
      * Original numbers are retained so they can be used with mark, unmark, or delete.
      */
     public List<Integer> findTaskNumbersOn(LocalDate date) {
+        assert date != null : "search date must not be null";
         ArrayList<Integer> taskNumbers = new ArrayList<>();
         for (int i = 0; i < tasks.size(); i++) {
             if (occursOn(tasks.get(i), date)) {
@@ -74,6 +80,7 @@ public class TaskList {
 
     /** Returns tasks whose descriptions contain the specified keyword, preserving their order. */
     public List<Task> find(String keyword) {
+        assert keyword != null : "search keyword must not be null";
         ArrayList<Task> matchingTasks = new ArrayList<>();
         for (Task task : tasks) {
             if (task.getDescription().contains(keyword)) {
@@ -81,6 +88,11 @@ public class TaskList {
             }
         }
         return matchingTasks;
+    }
+
+    /** Verifies the caller supplied an index that refers to an existing task. */
+    private void assertValidIndex(int index) {
+        assert index >= 0 && index < tasks.size() : "task index must refer to an existing task";
     }
 
     /** Returns whether a deadline or event belongs in a date search result. */
