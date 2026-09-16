@@ -100,4 +100,39 @@ public class StorageTest {
 
         assertThrows(TodException.class, storage::load);
     }
+    @Test
+    public void load_invalidFields_throwsErrorWithLineNumber() throws IOException {
+        Path dataPath = temporaryDirectory.resolve("tasks.txt");
+        String[] invalidLines = {
+            "T | 2 | read", "T | 0 | ", "T | 0 | read | extra",
+            "D | 0 | report | 2026-02-30T12:00",
+            "E | 0 | meeting | 2026-09-04T12:00 | 2026-09-04T12:00"
+        };
+        for (String line : invalidLines) {
+            Files.writeString(dataPath, line);
+            TodException exception = assertThrows(TodException.class, () -> new Storage(dataPath).load());
+            assertTrue(exception.getMessage().contains("line 1"));
+        }
+    }
+
+    @Test
+    public void load_parentIsFile_throwsFriendlyError() throws IOException {
+        Path parent = temporaryDirectory.resolve("blocked");
+        Files.writeString(parent, "keep");
+        Storage storage = new Storage(parent.resolve("tasks.txt"));
+        assertTrue(assertThrows(TodException.class, storage::load).getMessage().contains("couldn't load"));
+        assertEquals("keep", Files.readString(parent));
+    }
+
+    @Test
+    public void save_repeatedWrites_replacesFileAndCleansTemporaryFiles() throws IOException, TodException {
+        Path dataPath = temporaryDirectory.resolve("tasks.txt");
+        Storage storage = new Storage(dataPath);
+        storage.save(List.of(new Todo("first")));
+        storage.save(List.of(new Todo("second")));
+        assertEquals("second", storage.load().get(0).getDescription());
+        try (var files = Files.list(temporaryDirectory)) {
+            assertEquals(List.of(dataPath), files.toList());
+        }
+    }
 }

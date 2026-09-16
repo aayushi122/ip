@@ -134,4 +134,57 @@ public class ParserTest {
     public void parseKeyword_missingKeyword_throwsTodException() {
         assertThrows(TodException.class, () -> Parser.parseKeyword("find"));
     }
+    @Test
+    public void parse_extraWhitespace_acceptsCommandAndArguments() throws TodException {
+        assertEquals(Command.TODO, Parser.parse("  todo\tread book  "));
+        assertEquals("read  book", Parser.parseTodo("  todo\tread  book  ").getDescription());
+        assertEquals(0, Parser.parseIndex("  mark\t1  ", "mark", 1));
+        assertEquals(LocalDateTime.of(2026, 9, 4, 23, 59),
+                Parser.parseDeadline("  deadline report\t/by\t2026-09-04   2359  ").getBy());
+        assertEquals("meeting", Parser.parseEvent(
+                "  event meeting   /from\t2026-09-04  /to   2026-09-05  ").getDescription());
+    }
+
+    @Test
+    public void parseDeadline_missingOrRepeatedFields_throwsHelpfulError() {
+        String[] invalidInputs = {
+            "deadline /by 2026-09-04", "deadline report /by",
+            "deadline report /by 2026-09-04 /by 2026-09-05"
+        };
+        for (String input : invalidInputs) {
+            assertThrows(TodException.class, () -> Parser.parseDeadline(input), input);
+        }
+    }
+
+    @Test
+    public void parseEvent_missingRepeatedOrReversedFields_throwsError() {
+        String[] invalidInputs = {
+            "event /from 2026-09-04 /to 2026-09-05",
+            "event meeting /from /to 2026-09-05",
+            "event meeting /from 2026-09-04 /to",
+            "event meeting /to 2026-09-05 /from 2026-09-04",
+            "event meeting /from 2026-09-04 /from 2026-09-04 /to 2026-09-05",
+            "event meeting /from 2026-09-04 /to 2026-09-05 /to 2026-09-06",
+            "event meeting /from 2026-09-04 1400 /to 2026-09-04 1400"
+        };
+        for (String input : invalidInputs) {
+            assertThrows(TodException.class, () -> Parser.parseEvent(input), input);
+        }
+    }
+
+    @Test
+    public void parseTodo_saveFileSeparators_throwsError() {
+        assertThrows(TodException.class, () -> Parser.parseTodo("todo read | write"));
+        assertThrows(TodException.class, () -> Parser.parseTodo("todo read\nwrite"));
+        assertThrows(TodException.class, () -> Parser.parseTodo("todo read\rwrite"));
+        assertThrows(TodException.class, () -> Parser.parseDeadline("deadline a | b /by today"));
+        assertThrows(TodException.class, () -> Parser.parseEvent("event a | b /from today /to tomorrow"));
+    }
+
+    @Test
+    public void parseIndex_overflowNegativeAndExtraArguments_throwsError() {
+        for (String number : new String[]{"999999999999999999999", "-1", "1 2", "1.5", ""}) {
+            assertThrows(TodException.class, () -> Parser.parseIndex("mark " + number, "mark", 2));
+        }
+    }
 }
