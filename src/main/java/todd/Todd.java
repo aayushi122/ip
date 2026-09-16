@@ -11,7 +11,7 @@ public class Todd {
 
     private final Ui ui;
     private final Storage storage;
-    private final TaskList tasks;
+    private TaskList tasks;
     private final String loadingError;
 
     /** Creates Todd using the default data-file location. */
@@ -57,6 +57,9 @@ public class Todd {
      */
     public String getResponse(String input) {
         try {
+            if (input == null || input.isBlank()) {
+                throw new TodException("Type a command first. Try help to see what I can do.");
+            }
             Command command = Parser.parse(input);
             return execute(command, input);
         } catch (TodException e) {
@@ -71,13 +74,18 @@ public class Todd {
             String input = ui.readCommand();
             Command command = Parser.parse(input);
             ui.show(getResponse(input));
-            if (command == Command.BYE) {
+            if (command == Command.BYE && input.trim().equals("bye")) {
                 return;
             }
         }
     }
 
     private String execute(Command command, String input) throws TodException {
+        switch (command) {
+            case BYE, LIST, HELP, REMINDERS -> Parser.validateNoArguments(input);
+            case MARK, UNMARK, TODO, DEADLINE, EVENT, DELETE -> ensureStorageLoaded();
+            default -> { }
+        }
         return switch (command) {
             case BYE -> ui.formatGoodbye();
             case LIST -> ui.formatTaskList(tasks.asList());
@@ -91,7 +99,7 @@ public class Todd {
             case FIND -> findTasksByKeyword(input);
             case HELP -> ui.formatHelp();
             case REMINDERS -> showReminders();
-            case UNKNOWN -> throw new TodException("What does that mean dawg");
+            case UNKNOWN -> throw new TodException("What does that mean dawg? Type help for the commands I know.");
         };
     }
 
@@ -99,7 +107,12 @@ public class Todd {
     private String markTask(String input) throws TodException {
         int index = Parser.parseIndex(input, "mark", tasks.size());
         Task task = tasks.mark(index);
-        saveTasks();
+        try {
+            saveTasks();
+        } catch (TodException e) {
+            task.markAsUndone();
+            throw e;
+        }
         return ui.formatMarked(task);
     }
 
@@ -107,22 +120,38 @@ public class Todd {
     private String unmarkTask(String input) throws TodException {
         int index = Parser.parseIndex(input, "unmark", tasks.size());
         Task task = tasks.unmark(index);
-        saveTasks();
+        try {
+            saveTasks();
+        } catch (TodException e) {
+            task.markAsDone();
+            throw e;
+        }
         return ui.formatUnmarked(task);
     }
 
     /** Adds a parsed task, saves it, and formats a confirmation. */
     private String addTask(Task task) throws TodException {
         tasks.add(task);
-        saveTasks();
+        try {
+            saveTasks();
+        } catch (TodException e) {
+            tasks.delete(tasks.size() - 1);
+            throw e;
+        }
         return ui.formatAdded(task, tasks.size());
     }
 
     /** Deletes the task selected by a delete command and saves the updated list. */
     private String deleteTask(String input) throws TodException {
         int index = Parser.parseIndex(input, "delete", tasks.size());
+        List<Task> originalTasks = tasks.asList();
         Task removed = tasks.delete(index);
-        saveTasks();
+        try {
+            saveTasks();
+        } catch (TodException e) {
+            tasks = new TaskList(originalTasks);
+            throw e;
+        }
         return ui.formatDeleted(removed, tasks.size());
     }
 
@@ -144,6 +173,14 @@ public class Todd {
         LocalDate startDate = LocalDate.now();
         List<Integer> taskNumbers = tasks.findUpcomingTaskNumbers(startDate, REMINDER_WINDOW_DAYS);
         return ui.formatReminders(startDate, REMINDER_WINDOW_DAYS, tasks.asList(), taskNumbers);
+    }
+
+    /** Protects unreadable saved data from being overwritten by a new empty list. */
+    private void ensureStorageLoaded() throws TodException {
+        if (loadingError != null) {
+            throw new TodException("Task changes are disabled to protect your saved data. "
+                    + "Fix the data file or its access permissions, then restart Todd.");
+        }
     }
 
     private void saveTasks() throws TodException {

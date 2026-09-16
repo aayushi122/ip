@@ -54,7 +54,8 @@ public class Ui {
 
     /** Returns an error that prevented saved tasks from being loaded. */
     public String formatLoadingError(String message) {
-        return surround(message, "Todd will start with an empty task list.");
+        return surround(message, "Todd could not load your list. Task changes are disabled to protect your saved data.",
+                "Fix the file or its access permissions, then restart Todd.");
     }
 
     /** Returns a user-facing command error. */

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -54,14 +55,28 @@ public class Storage {
      * @throws TodException if the tasks cannot be written to disk
      */
     public void save(List<Task> tasks) throws TodException {
+        Path temporaryFile = null;
         try {
             createParentDirectory();
             List<String> lines = tasks.stream()
                     .map(this::formatTask)
                     .toList();
-            Files.write(filePath, lines, StandardCharsets.UTF_8);
+            // Write fully before replacing the old file, so failed writes cannot truncate saved tasks.
+            temporaryFile = Files.createTempFile(filePath.toAbsolutePath().getParent(), "todd-", ".tmp");
+            Files.write(temporaryFile, lines, StandardCharsets.UTF_8);
+            Files.move(temporaryFile, filePath, StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            throw new TodException("I couldn't save tasks to " + filePath + ".");
+            throw new TodException("I couldn't save tasks to " + filePath + ". No task changes were kept. "
+                    + "Check that the folder is writable and has free space; atomic file replacement is required.");
+        } finally {
+            if (temporaryFile != null) {
+                try {
+                    Files.deleteIfExists(temporaryFile);
+                } catch (IOException e) {
+                    // A leftover temporary file must not hide the original save error.
+                }
+            }
         }
     }
 
@@ -117,7 +132,7 @@ public class Storage {
                     }
                     LocalDateTime from = LocalDateTime.parse(fields[3]);
                     LocalDateTime to = LocalDateTime.parse(fields[4]);
-                    if (to.isBefore(from)) {
+                    if (!to.isAfter(from)) {
                         throw invalidData(lineNumber);
                     }
                     task = new Event(fields[2], from, to);

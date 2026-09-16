@@ -10,7 +10,7 @@ public final class Parser {
 
     /** Identifies the command word at the start of the user's input. */
     public static Command parse(String input) {
-        String commandWord = input.split(" ")[0];
+        String commandWord = input.trim().split("\\s+", 2)[0];
         switch (commandWord) {
             case "bye":
                 return Command.BYE;
@@ -72,6 +72,7 @@ public final class Parser {
         if (description.isEmpty()) {
             throw new TodException("Wait you didn't even tell me what is the to-do");
         }
+        validateDescription(description);
         return new Todo(description);
     }
 
@@ -82,7 +83,7 @@ public final class Parser {
             throw new TodException("Wait you didn't even tell me anything about this deadline");
         }
 
-        String[] parts = arguments.split(" /by ", 2);
+        String[] parts = splitParameter(arguments, "/by");
         String description = parts[0].trim();
         if (description.isEmpty()) {
             throw new TodException("Try Again! The description is literally empty.");
@@ -91,6 +92,7 @@ public final class Parser {
             throw new TodException("Try Again! There is no /by date or time.");
         }
 
+        validateDescription(description);
         LocalDateTime by = DateTimeUtil.parseDateTime(parts[1].trim());
         return new Deadline(description, by);
     }
@@ -102,7 +104,11 @@ public final class Parser {
             throw new TodException("Wait you didn't even tell me anything about this event");
         }
 
-        String[] fromSplit = arguments.split(" /from ", 2);
+        String[] allToParts = splitParameter(arguments, "/to");
+        String[] fromSplit = splitParameter(arguments, "/from");
+        if (allToParts.length == 2 && splitParameter(fromSplit[0], "/to").length == 2) {
+            throw new TodException("Put /from before /to. Type help for the event format.");
+        }
         String description = fromSplit[0].trim();
         if (description.isEmpty()) {
             throw new TodException("Try Again! The description is literally empty.");
@@ -111,15 +117,16 @@ public final class Parser {
             throw new TodException("Try Again! There is no /from time.");
         }
 
-        String[] toSplit = fromSplit[1].split(" /to ", 2);
+        String[] toSplit = splitParameter(fromSplit[1], "/to");
         String fromText = toSplit[0].trim();
         if (toSplit.length < 2 || toSplit[1].trim().isEmpty()) {
             throw new TodException("Try Again! There is no /to time.");
         }
+        validateDescription(description);
         LocalDateTime from = DateTimeUtil.parseDateTime(fromText);
         LocalDateTime to = DateTimeUtil.parseDateTime(toSplit[1].trim());
-        if (to.isBefore(from)) {
-            throw new TodException("The /to date and time cannot be before /from.");
+        if (!to.isAfter(from)) {
+            throw new TodException("The /to date and time must be after /from.");
         }
         return new Event(description, from, to);
     }
@@ -140,7 +147,32 @@ public final class Parser {
 
     /** Returns the trimmed part of an input line that follows its command word. */
     private static String getArguments(String input, String command) {
+        input = input.trim();
         return input.length() > command.length() ? input.substring(command.length()).trim() : "";
+    }
+
+    /** Splits a required parameter, accepting whitespace and rejecting repeated occurrences. */
+    private static String[] splitParameter(String arguments, String parameter) throws TodException {
+        String[] parts = arguments.split("(?<!\\S)" + parameter + "(?=\\s|$)", -1);
+        if (parts.length > 2) {
+            throw new TodException("Use " + parameter + " only once. Type help for the command format.");
+        }
+        return parts;
+    }
+
+    /** Prevents descriptions from introducing extra fields or lines in the save file. */
+    private static void validateDescription(String description) throws TodException {
+        if (description.contains("|") || description.contains("\n") || description.contains("\r")) {
+            throw new TodException("Please keep the description on one line and leave out | characters.");
+        }
+    }
+
+    /** Rejects accidental arguments to commands that do not accept any. */
+    public static void validateNoArguments(String input) throws TodException {
+        String[] parts = input.trim().split("\\s+", 2);
+        if (parts.length > 1) {
+            throw new TodException("Use just " + parts[0] + " without extra words or numbers.");
+        }
     }
 
     private static TodException invalidTaskNumber(String command) {
