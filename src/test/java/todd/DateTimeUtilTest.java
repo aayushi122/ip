@@ -2,6 +2,7 @@ package todd;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -92,5 +93,16 @@ public class DateTimeUtilTest {
         String result = DateTimeUtil.format(LocalDate.of(2026, 9, 4));
 
         assertEquals("Sep 04 2026", result);
+    }
+    @Test
+    public void parseDateTime_invalidDateAndTime_giveDifferentGuidance() {
+        TodException dateError = assertThrows(TodException.class, () ->
+                DateTimeUtil.parseDateTime("2026-02-30 1430"));
+        assertTrue(dateError.getMessage().contains("That date doesn't look right"));
+        assertTrue(dateError.getMessage().contains("yyyy-MM-dd"));
+        TodException timeError = assertThrows(TodException.class, () ->
+                DateTimeUtil.parseDateTime("2026-09-17 2500"));
+        assertTrue(timeError.getMessage().contains("That time doesn't look right"));
+        assertTrue(timeError.getMessage().contains("0000 to 2359"));
     }
 }

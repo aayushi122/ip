@@ -49,6 +49,14 @@ public class Todd {
         return ui.formatWelcome() + System.lineSeparator() + loadingError;
     }
 
+    /** Returns a compact GUI welcome while retaining any warning about saved data. */
+    public String getGuiWelcomeMessage() {
+        if (loadingError == null) {
+            return ui.formatGuiWelcome();
+        }
+        return ui.formatGuiWelcome() + "\n\n" + Ui.formatForGui(loadingError);
+    }
+
     /**
      * Processes one command and returns the response for either user interface.
      *
@@ -56,14 +64,19 @@ public class Todd {
      * @return response to display
      */
     public String getResponse(String input) {
+        return getReply(input).text();
+    }
+
+    /** Processes a command once and includes the information needed to style its reply. */
+    public Response getReply(String input) {
         try {
             if (input == null || input.isBlank()) {
                 throw new TodException("Type a command first. Try help to see what I can do.");
             }
             Command command = Parser.parse(input);
-            return execute(command, input);
+            return new Response(execute(command, input), false, command == Command.HELP, command == Command.BYE);
         } catch (TodException e) {
-            return ui.formatError(e.getMessage());
+            return new Response(ui.formatError(e.getMessage()), true, false, false);
         }
     }
 
@@ -72,9 +85,9 @@ public class Todd {
 
         while (true) {
             String input = ui.readCommand();
-            Command command = Parser.parse(input);
-            ui.show(getResponse(input));
-            if (command == Command.BYE && input.trim().equals("bye")) {
+            Response response = getReply(input);
+            ui.show(response.text());
+            if (response.exit()) {
                 return;
             }
         }
@@ -82,7 +95,7 @@ public class Todd {
 
     private String execute(Command command, String input) throws TodException {
         switch (command) {
-            case BYE, LIST, HELP, REMINDERS -> Parser.validateNoArguments(input);
+            case BYE, LIST, HELP, REMINDERS, GREETING -> Parser.validateNoArguments(input);
             case MARK, UNMARK, TODO, DEADLINE, EVENT, DELETE -> ensureStorageLoaded();
             default -> { }
         }
@@ -97,9 +110,11 @@ public class Todd {
             case DELETE -> deleteTask(input);
             case ON -> findTasksOnDate(input);
             case FIND -> findTasksByKeyword(input);
+            case GREETING -> "Supp";
             case HELP -> ui.formatHelp();
             case REMINDERS -> showReminders();
-            case UNKNOWN -> throw new TodException("What does that mean dawg? Type help for the commands I know.");
+            case UNKNOWN -> throw new TodException("What does that mean dawg? Sorry I am a little dumb.\n\n"
+                    + "You can type help for all the commands I know");
         };
     }
 

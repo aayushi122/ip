@@ -42,12 +42,13 @@ public final class DateTimeUtil {
     /** Parses a date-time relative to a supplied date, allowing deterministic tests. */
     static LocalDateTime parseDateTime(String input, LocalDate today) throws TodException {
         String[] parts = input.trim().split("\\s+", 2);
+        LocalDate date = parseDate(parts[0], today);
         try {
-            LocalDate date = parseDateToken(parts[0], today);
             LocalTime time = parts.length == 1 ? LocalTime.MIDNIGHT : LocalTime.parse(parts[1], INPUT_TIME);
             return date.atTime(time);
         } catch (DateTimeParseException e) {
-            throw invalidDateTime();
+            throw new TodException("That time doesn't look right, dawg. "
+                    + "Use a 24-hour time from 0000 to 2359, like 1430 for 2:30pm.");
         }
     }
 
@@ -68,7 +69,8 @@ public final class DateTimeUtil {
             return parseDateToken(input.trim(), today);
         } catch (DateTimeParseException e) {
             throw new TodException(
-                    "Please use yyyy-MM-dd, today, tomorrow, or a weekday such as Mon.");
+                    "That date doesn't look right, dawg. Check that the day and month actually exist.\n"
+                    + "Try yyyy-MM-dd (like 2026-09-17), today, tomorrow, or a weekday such as Mon.");
         }
     }
 
@@ -94,11 +96,6 @@ public final class DateTimeUtil {
             }
             throw e;
         }
-    }
-
-    private static TodException invalidDateTime() {
-        return new TodException("Please use yyyy-MM-dd, today, tomorrow, or a weekday such as Mon, "
-                + "optionally followed by a time in HHmm format.");
     }
 
     /** Formats a stored date and omits the time when it is midnight. */

@@ -32,7 +32,22 @@ public class Ui {
 
     /** Returns Todd's welcome message. */
     public String formatWelcome() {
-        return BANNER + "Hello There! I'm Todd, a NPC Chatbot :P\nWhat can I do for you today?";
+        return BANNER + "Hello There! I'm Todd, a NPC Chatbot\nWhat can I do for you today?";
+    }
+
+    /** Returns the welcome text without the console's ASCII art. */
+    public String formatGuiWelcome() {
+        return formatWelcome().substring(BANNER.length());
+    }
+
+    /** Removes only the outer console separators; the GUI supplies its own message borders. */
+    public static String formatForGui(String message) {
+        String prefix = LINE + "\n";
+        String suffix = "\n" + LINE;
+        if (message.startsWith(prefix) && message.endsWith(suffix)) {
+            return message.substring(prefix.length(), message.length() - suffix.length());
+        }
+        return message;
     }
 
     /** Returns Todd's goodbye message. */
@@ -43,13 +58,42 @@ public class Ui {
     /** Returns a concise guide to the commands Todd recognizes. */
     public String formatHelp() {
         return surround(
-                "Here are the commands I understand:",
-                "todo DESCRIPTION",
-                "deadline DESCRIPTION /by DATE [HHmm]",
-                "event DESCRIPTION /from DATE [HHmm] /to DATE [HHmm]",
-                "list | mark NUMBER | unmark NUMBER | delete NUMBER",
-                "find KEYWORD | on DATE | reminders | help | bye",
-                "DATE can be yyyy-MM-dd, today, tomorrow, or a weekday such as Mon.");
+                "Here's what you can ask me to do:",
+                "",
+                "ADD TASKS",
+                "todo <description>",
+                "Add a task. Example: todo read notes",
+                "",
+                "deadline <description> /by <date> [HHmm]",
+                "Add a task with a due date.",
+                "Example: deadline submit report /by tomorrow 1800",
+                "",
+                "event <description> /from <date> [HHmm] /to <date> [HHmm]",
+                "Add an event with a start and end.",
+                "Example: event study /from today 1400 /to today 1600",
+                "",
+                "VIEW & FIND",
+                "list — Show all your tasks and their numbers.",
+                "find <keyword> — Search task descriptions. Example: find notes",
+                "on <date> — Show deadlines and events on a date. Example: on tomorrow",
+                "reminders — Show unfinished deadlines and events over the next 7 days.",
+                "",
+                "UPDATE TASKS",
+                "mark <task number> — Mark a task done. Example: mark 1",
+                "unmark <task number> — Mark a task not done. Example: unmark 1",
+                "delete <task number> — Remove a task. Example: delete 1",
+                "Use the task numbers from list.",
+                "",
+                "CHAT & HELP",
+                "hi or hello — Say hi to Todd.",
+                "help — Show this guide.",
+                "bye — Say goodbye.",
+                "",
+                "HOW TO READ THE FORMATS",
+                "Replace <description>, <date>, and <task number> with your own details.",
+                "Don't type the < > or [ ] brackets. [HHmm] means the time is optional.",
+                "Dates: yyyy-MM-dd, today, tomorrow, or a weekday such as Mon.",
+                "Time: use 24-hour HHmm, e.g. 1430 for 2:30pm.");
     }
 
     /** Returns an error that prevented saved tasks from being loaded. */
@@ -76,12 +120,12 @@ public class Ui {
 
     /** Returns confirmation that the specified task was marked. */
     public String formatMarked(Task task) {
-        return surround("Hooray! You are on fire! Task crossed off.", "   " + task);
+        return surround("Okayy one more step to making it out alive.", "   " + task);
     }
 
     /** Returns confirmation that the specified task was unmarked. */
     public String formatUnmarked(Task task) {
-        return surround("Oh no! Okay unmarked.", "   " + task);
+        return surround("It's okay, I believe in you!", "   " + task);
     }
 
     /** Returns the added task and the updated total number of tasks. */
@@ -128,18 +172,17 @@ public class Ui {
     /** Returns incomplete deadlines and events occurring in the reminder window. */
     public String formatReminders(LocalDate startDate, int numberOfDays,
                                   List<Task> tasks, List<Integer> taskNumbers) {
+        if (taskNumbers.isEmpty()) {
+            return surround("You have no upcoming deadlines or events.");
+        }
         LocalDate endDate = startDate.plusDays(numberOfDays - 1L);
         StringBuilder content = new StringBuilder("Upcoming incomplete deadlines and events from ")
                 .append(DateTimeUtil.format(startDate))
                 .append(" to ")
                 .append(DateTimeUtil.format(endDate))
                 .append(":");
-        if (taskNumbers.isEmpty()) {
-            content.append("\nYou have no upcoming deadlines or events.");
-        } else {
-            for (int taskNumber : taskNumbers) {
-                content.append("\n ").append(taskNumber).append(".").append(tasks.get(taskNumber - 1));
-            }
+        for (int taskNumber : taskNumbers) {
+            content.append("\n ").append(taskNumber).append(".").append(tasks.get(taskNumber - 1));
         }
         return surround(content.toString());
     }

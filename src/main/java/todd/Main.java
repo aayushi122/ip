@@ -5,7 +5,7 @@ import java.io.IOException;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 /** Provides the JavaFX entry point for Todd's graphical interface. */
@@ -16,7 +16,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader loader = new FXMLLoader(Main.class.getResource("/view/MainWindow.fxml"));
-        AnchorPane root = loader.load();
+        BorderPane root = loader.load();
         Scene scene = new Scene(root);
         scene.getStylesheets().add(Main.class.getResource("/css/main.css").toExternalForm());
 
@@ -24,7 +24,7 @@ public class Main extends Application {
         stage.setScene(scene);
         stage.setTitle("Todd");
         stage.setMinWidth(420);
-        stage.setMinHeight(620);
+        stage.setMinHeight(480);
         stage.show();
     }
 }

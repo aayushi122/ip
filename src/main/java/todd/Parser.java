@@ -12,6 +12,9 @@ public final class Parser {
     public static Command parse(String input) {
         String commandWord = input.trim().split("\\s+", 2)[0];
         switch (commandWord) {
+            case "hi":
+            case "hello":
+                return Command.GREETING;
             case "bye":
                 return Command.BYE;
             case "list":
@@ -44,7 +47,11 @@ public final class Parser {
     /** Parses and validates a one-based task number, returning its zero-based index. */
     public static int parseIndex(String input, String command, int listSize) throws TodException {
         String numberPart = getArguments(input, command);
-        boolean isValidNumber = !numberPart.isEmpty();
+        if (numberPart.isEmpty()) {
+            throw new TodException("Wait you didn't tell me which task to " + command + ". Try "
+                    + command + " <task number>");
+        }
+        boolean isValidNumber = true;
         for (int i = 0; i < numberPart.length(); i++) {
             if (!Character.isDigit(numberPart.charAt(i))) {
                 isValidNumber = false;
@@ -61,7 +68,7 @@ public final class Parser {
             throw invalidTaskNumber(command);
         }
         if (index < 0 || index >= listSize) {
-            throw new TodException("Am I tripping cuz that task number literally doesn't exist!");
+            throw new TodException("Am I tripping or that task number does not exist?");
         }
         return index;
     }
@@ -70,7 +77,7 @@ public final class Parser {
     public static Todo parseTodo(String input) throws TodException {
         String description = getArguments(input, "todo");
         if (description.isEmpty()) {
-            throw new TodException("Wait you didn't even tell me what is the to-do");
+            throw new TodException("Wait you didn't tell me what the todo is. Try todo <description>");
         }
         validateDescription(description);
         return new Todo(description);
@@ -80,16 +87,17 @@ public final class Parser {
     public static Deadline parseDeadline(String input) throws TodException {
         String arguments = getArguments(input, "deadline");
         if (arguments.isEmpty()) {
-            throw new TodException("Wait you didn't even tell me anything about this deadline");
+            throw missingDeadlineDescription();
         }
 
         String[] parts = splitParameter(arguments, "/by");
         String description = parts[0].trim();
         if (description.isEmpty()) {
-            throw new TodException("Try Again! The description is literally empty.");
+            throw missingDeadlineDescription();
         }
         if (parts.length < 2 || parts[1].trim().isEmpty()) {
-            throw new TodException("Try Again! There is no /by date or time.");
+            throw new TodException("Wait you didn't tell me when the deadline is. "
+                    + "Try deadline <description> /by <date> [HHmm]");
         }
 
         validateDescription(description);
@@ -101,7 +109,7 @@ public final class Parser {
     public static Event parseEvent(String input) throws TodException {
         String arguments = getArguments(input, "event");
         if (arguments.isEmpty()) {
-            throw new TodException("Wait you didn't even tell me anything about this event");
+            throw missingEventDescription();
         }
 
         String[] allToParts = splitParameter(arguments, "/to");
@@ -111,16 +119,20 @@ public final class Parser {
         }
         String description = fromSplit[0].trim();
         if (description.isEmpty()) {
-            throw new TodException("Try Again! The description is literally empty.");
+            throw missingEventDescription();
         }
         if (fromSplit.length < 2 || fromSplit[1].trim().isEmpty()) {
-            throw new TodException("Try Again! There is no /from time.");
+            throw missingEventStart();
         }
 
         String[] toSplit = splitParameter(fromSplit[1], "/to");
         String fromText = toSplit[0].trim();
+        if (fromText.isEmpty()) {
+            throw missingEventStart();
+        }
         if (toSplit.length < 2 || toSplit[1].trim().isEmpty()) {
-            throw new TodException("Try Again! There is no /to time.");
+            throw new TodException("Wait you didn't tell me when the event ends. "
+                    + "Try event <description> /from <date> [HHmm] /to <date> [HHmm]");
         }
         validateDescription(description);
         LocalDateTime from = DateTimeUtil.parseDateTime(fromText);
@@ -133,14 +145,18 @@ public final class Parser {
 
     /** Parses the date argument of an on command. */
     public static LocalDate parseDate(String input) throws TodException {
-        return DateTimeUtil.parseDate(getArguments(input, "on"));
+        String date = getArguments(input, "on");
+        if (date.isEmpty()) {
+            throw new TodException("Wait you didn't tell me which date to check. Try on <date>");
+        }
+        return DateTimeUtil.parseDate(date);
     }
 
     /** Parses and validates the keyword of a find command. */
     public static String parseKeyword(String input) throws TodException {
         String keyword = getArguments(input, "find");
         if (keyword.isEmpty()) {
-            throw new TodException("Wait you didn't give me a keyword to find.");
+            throw new TodException("Wait you didn't tell me what to find. Try find <keyword>");
         }
         return keyword;
     }
@@ -173,6 +189,24 @@ public final class Parser {
         if (parts.length > 1) {
             throw new TodException("Use just " + parts[0] + " without extra words or numbers.");
         }
+    }
+
+    /** Supplies the complete deadline format when its description is missing. */
+    private static TodException missingDeadlineDescription() {
+        return new TodException("Wait you didn't tell me what the deadline is. "
+                + "Try deadline <description> /by <date> [HHmm]");
+    }
+
+    /** Supplies the complete event format when its description is missing. */
+    private static TodException missingEventDescription() {
+        return new TodException("Wait you didn't tell me what the event is. "
+                + "Try event <description> /from <date> [HHmm] /to <date> [HHmm]");
+    }
+
+    /** Explains how to supply an event's missing start date or time. */
+    private static TodException missingEventStart() {
+        return new TodException("Wait you didn't tell me when the event starts. "
+                + "Try event <description> /from <date> [HHmm] /to <date> [HHmm]");
     }
 
     private static TodException invalidTaskNumber(String command) {

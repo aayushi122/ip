@@ -34,7 +34,8 @@ public class ToddTest {
 
         String response = todd.getResponse("dance");
 
-        assertTrue(response.contains("What does that mean dawg"));
+        assertEquals("What does that mean dawg? Sorry I am a little dumb.\n\n"
+                + "You can type help for all the commands I know", Ui.formatForGui(response));
     }
 
     @Test
@@ -60,8 +61,12 @@ public class ToddTest {
 
         String response = todd.getResponse("help");
 
-        assertTrue(response.contains("deadline DESCRIPTION /by DATE [HHmm]"));
-        assertTrue(response.contains("reminders | help | bye"));
+        assertTrue(response.contains("deadline <description> /by <date> [HHmm]"));
+        assertTrue(response.contains("ADD TASKS\n"));
+        assertTrue(response.contains("\nVIEW & FIND\n"));
+        assertTrue(response.contains("\nUPDATE TASKS\n"));
+        assertTrue(response.contains("Example: todo read notes"));
+        assertTrue(response.contains("[HHmm] means the time is optional"));
         assertTrue(response.contains("today, tomorrow, or a weekday"));
     }
     @Test
@@ -69,7 +74,7 @@ public class ToddTest {
         Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
         assertTrue(todd.getResponse("  ").contains("Type a command first"));
         assertTrue(todd.getResponse(null).contains("Type a command first"));
-        for (String command : new String[]{"list", "help", "reminders", "bye"}) {
+        for (String command : new String[]{"list", "help", "reminders", "bye", "hi", "hello"}) {
             assertTrue(todd.getResponse(command + " extra").contains("Use just " + command));
         }
     }
@@ -125,5 +130,126 @@ public class ToddTest {
         assertTrue(todd.getResponse("todo retry").contains("I've added"));
         assertTrue(new Todd(dataPath).getResponse("list").contains("retry"));
         assertFalse(new Todd(dataPath).getResponse("list").contains("[T][ ] new"));
+    }
+    @Test
+    public void getGuiWelcomeMessage_corruptSave_retainsWarningWithoutConsoleDecoration() throws IOException {
+        Path dataPath = tempDirectory.resolve("todd.txt");
+        Files.writeString(dataPath, "invalid data");
+        String welcome = new Todd(dataPath).getGuiWelcomeMessage();
+        assertTrue(welcome.startsWith("Hello There!"));
+        assertTrue(welcome.contains("line 1"));
+        assertTrue(welcome.contains("changes are disabled"));
+        assertFalse(welcome.contains("________"));
+    }
+
+    @Test
+    public void formatForGui_taskReply_preservesTaskContent() {
+        Ui ui = new Ui();
+        String formatted = Ui.formatForGui(ui.formatAdded(new Todo("read ______ notes"), 1));
+        assertTrue(formatted.startsWith("Got it."));
+        assertTrue(formatted.contains("[T][ ] read ______ notes"));
+        assertFalse(formatted.contains("____________________________________________________________"));
+        assertEquals("plain reply", Ui.formatForGui("plain reply"));
+    }
+    @Test
+    public void getResponse_greetings_returnsSuppWithoutChangingTasks() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+        String originalList = todd.getResponse("list");
+        assertEquals("Supp", todd.getResponse("hi"));
+        assertEquals("Supp", todd.getResponse("  hello  "));
+        assertEquals(originalList, todd.getResponse("list"));
+        assertFalse(todd.getWelcomeMessage().contains(":P"));
+        assertFalse(todd.getGuiWelcomeMessage().contains(":P"));
+    }
+
+    @Test
+    public void getResponse_missingArguments_explainsWhatToType() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+        assertEquals("Wait you didn't tell me what the todo is. Try todo <description>",
+                Ui.formatForGui(todd.getResponse("todo")));
+        String[][] examples = {
+            {"deadline", "Try deadline <description> /by <date> [HHmm]"},
+            {"deadline /by today", "what the deadline is"},
+            {"deadline report", "when the deadline is"},
+            {"event", "Try event <description> /from <date> [HHmm] /to <date> [HHmm]"},
+            {"event /from today /to tomorrow", "what the event is"},
+            {"event study", "when the event starts"},
+            {"event study /from /to tomorrow", "when the event starts"},
+            {"event study /from today", "when the event ends"},
+            {"find", "Try find <keyword>"},
+            {"on", "Try on <date>"},
+            {"mark", "Try mark <task number>"},
+            {"unmark", "Try unmark <task number>"},
+            {"delete", "Try delete <task number>"}
+        };
+        for (String[] example : examples) {
+            assertTrue(todd.getResponse(example[0]).contains(example[1]), example[0]);
+        }
+    }
+    @Test
+    public void getReply_errorsAndHelp_haveDistinctDisplayCategories() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+        Response error = todd.getReply("dance");
+        assertTrue(error.error());
+        assertFalse(error.help());
+        Response help = todd.getReply("help");
+        assertTrue(help.help());
+        assertFalse(help.error());
+        assertTrue(todd.getReply("help extra").error());
+        assertFalse(todd.getReply("help extra").help());
+        // A task containing error wording must still appear as a successful response.
+        Response added = todd.getReply("todo What does that mean dawg?");
+        assertFalse(added.error());
+        assertFalse(added.help());
+    }
+
+    @Test
+    public void getReply_alreadyUnmarked_reportsOriginalTaskNumber() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+        todd.getResponse("todo first");
+        todd.getResponse("todo second");
+        Response response = todd.getReply("unmark 2");
+        assertEquals("Task 2 is already unmarked.", Ui.formatForGui(response.text()));
+        assertTrue(response.error());
+    }
+    @Test
+    public void getResponse_markAndUnmark_useEncouragingMessages() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+        todd.getResponse("todo read notes");
+        assertTrue(todd.getResponse("mark 1").contains("Okayy one more step to making it out alive."));
+        assertTrue(todd.getResponse("unmark 1").contains("It's okay, I believe in you!"));
+    }
+
+    @Test
+    public void getResponse_emptyReminders_omitsUpcomingHeading() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+        assertEquals("You have no upcoming deadlines or events.",
+                Ui.formatForGui(todd.getResponse("reminders")));
+        todd.getResponse("deadline report /by today");
+        assertTrue(todd.getResponse("reminders").contains("Upcoming incomplete deadlines and events from"));
+        todd.getResponse("mark 1");
+        assertEquals("You have no upcoming deadlines or events.",
+                Ui.formatForGui(todd.getResponse("reminders")));
+    }
+
+    @Test
+    public void getResponse_nonexistentTaskNumber_usesUpdatedMessage() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+        for (String command : new String[]{"mark 1", "unmark 1", "delete 1"}) {
+            assertEquals("Am I tripping or that task number does not exist?",
+                    Ui.formatForGui(todd.getResponse(command)));
+        }
+    }
+    @Test
+    public void getReply_bye_exitsOnlyForAValidGoodbyeCommand() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+        Response goodbye = todd.getReply("  bye  ");
+        assertTrue(goodbye.exit());
+        assertFalse(goodbye.error());
+        assertTrue(goodbye.text().contains("See you soon"));
+        assertFalse(todd.getReply("bye extra").exit());
+        assertTrue(todd.getReply("bye extra").error());
+        assertFalse(todd.getReply("todo bye").exit());
+        assertFalse(todd.getReply("hello").exit());
     }
 }
