@@ -279,4 +279,62 @@ public class ToddTest {
         assertTrue(deleted.startsWith("Quest abandoned. I saw nothing."));
         assertTrue(deleted.contains("read notes"));
     }
+    @Test
+    public void getResponse_findThenMarkAndDelete_targetsDisplayedTaskNumber() {
+        Path dataPath = tempDirectory.resolve("todd.txt");
+        Todd todd = new Todd(dataPath);
+        todd.getResponse("todo unrelated task");
+        todd.getResponse("todo read notes");
+        todd.getResponse("todo more notes");
+        String found = todd.getResponse("find notes");
+        assertTrue(found.contains("2.[T][ ] read notes"));
+        assertTrue(found.contains("3.[T][ ] more notes"));
+        assertFalse(found.contains("1.[T]"));
+        todd.getResponse("mark 2");
+        assertTrue(new Todd(dataPath).getResponse("list").contains("2.[T][X] read notes"));
+        todd.getResponse("delete 3");
+        String remaining = new Todd(dataPath).getResponse("list");
+        assertTrue(remaining.contains("1.[T][ ] unrelated task"));
+        assertFalse(remaining.contains("more notes"));
+    }
+
+    @Test
+    public void getReply_commonInvalidInputs_returnErrorsWithoutChangingTasks() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+        todd.getResponse("todo original");
+        String original = todd.getResponse("list");
+        String[] invalidCommands = {
+            "", "dance", "todo", "deadline", "event", "mark", "unmark", "delete", "find", "on",
+            "mark abc", "delete -1", "mark 999999999999999999999", "delete 2", "list extra",
+            "deadline report /by 2026-02-30", "deadline report /by today 2460",
+            "deadline report /by today /by tomorrow", "event study /from today /to today",
+            "event study /from tomorrow /to today", "event study /to tomorrow /from today"
+        };
+        for (String input : invalidCommands) {
+            assertTrue(todd.getReply(input).error(), input);
+            assertEquals(original, todd.getResponse("list"), input);
+        }
+    }
+
+    @Test
+    public void getResponse_missingDataFile_startsEmptyAndCreatesSaveOnAdd() {
+        Path dataPath = tempDirectory.resolve("new-folder").resolve("todd.txt");
+        Todd todd = new Todd(dataPath);
+        assertFalse(todd.getWelcomeMessage().contains("couldn't load"));
+        assertFalse(todd.getReply("todo first task").error());
+        assertTrue(Files.isRegularFile(dataPath));
+        assertTrue(new Todd(dataPath).getResponse("list").contains("first task"));
+    }
+
+    @Test
+    public void getResponse_directoryAtDataPath_reportsLoadFailureAndPreservesContents() throws IOException {
+        Path dataPath = tempDirectory.resolve("todd.txt");
+        Files.createDirectory(dataPath);
+        Path existingFile = dataPath.resolve("keep.txt");
+        Files.writeString(existingFile, "keep");
+        Todd todd = new Todd(dataPath);
+        assertTrue(todd.getWelcomeMessage().contains("couldn't load"));
+        assertTrue(todd.getReply("todo new task").error());
+        assertEquals("keep", Files.readString(existingFile));
+    }
 }

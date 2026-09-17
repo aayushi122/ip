@@ -180,7 +180,7 @@ public class Todd {
     /** Formats tasks matching the keyword supplied by a find command. */
     private String findTasksByKeyword(String input) throws TodException {
         String keyword = Parser.parseKeyword(input);
-        return ui.formatMatchingTasks(tasks.find(keyword));
+        return ui.formatMatchingTasks(tasks.asList(), tasks.findTaskNumbers(keyword));
     }
 
     /** Shows incomplete deadlines and events occurring during the next seven days. */

@@ -158,14 +158,16 @@ public class Ui {
         return surround(content.toString());
     }
 
-    /** Returns tasks whose descriptions match a find command. */
-    public String formatMatchingTasks(List<Task> matchingTasks) {
-        if (matchingTasks.isEmpty()) {
+    /** Returns search matches with their original task numbers for mark, unmark, and delete. */
+    public String formatMatchingTasks(List<Task> tasks, List<Integer> taskNumbers) {
+        if (taskNumbers.isEmpty()) {
             return surround("Couldn't find it gang. Try something else.");
         }
 
         StringBuilder content = new StringBuilder("Found these lurking in your quest log:");
-        appendNumberedTasks(content, matchingTasks);
+        for (int taskNumber : taskNumbers) {
+            content.append("\n ").append(taskNumber).append(".").append(tasks.get(taskNumber - 1));
+        }
         return surround(content.toString());
     }
 

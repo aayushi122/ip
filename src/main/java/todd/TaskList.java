@@ -78,12 +78,16 @@ public class TaskList {
         return taskNumbers;
     }
 
-    /** Returns tasks whose descriptions contain the specified keyword, preserving their order. */
-    public List<Task> find(String keyword) {
+    /** Returns original one-based task numbers whose descriptions contain the keyword. */
+    public List<Integer> findTaskNumbers(String keyword) {
         assert keyword != null : "search keyword must not be null";
-        return tasks.stream()
-                .filter(task -> task.getDescription().contains(keyword))
-                .toList();
+        ArrayList<Integer> taskNumbers = new ArrayList<>();
+        for (int i = 0; i < tasks.size(); i++) {
+            if (tasks.get(i).getDescription().contains(keyword)) {
+                taskNumbers.add(i + 1);
+            }
+        }
+        return taskNumbers;
     }
 
     /**

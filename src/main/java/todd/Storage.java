@@ -30,7 +30,7 @@ public class Storage {
     public ArrayList<Task> load() throws TodException {
         try {
             createParentDirectory();
-            if (!Files.exists(filePath)) {
+            if (Files.notExists(filePath)) {
                 return new ArrayList<>();
             }
 
