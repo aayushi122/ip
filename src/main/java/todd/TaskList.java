@@ -46,7 +46,7 @@ public class TaskList {
         assertValidIndex(index);
         Task task = tasks.get(index);
         if (task.isDone()) {
-            throw new TodException("That task is already marked.");
+            throw new TodException("Gang, task " + (index + 1) + " is already done. Take the win.");
         }
         task.markAsDone();
         return task;
@@ -57,7 +57,7 @@ public class TaskList {
         assertValidIndex(index);
         Task task = tasks.get(index);
         if (!task.isDone()) {
-            throw new TodException("Task " + (index + 1) + " is already unmarked.");
+            throw new TodException("Gang, I think task " + (index + 1) + " is already unmarked.");
         }
         task.markAsUndone();
         return task;

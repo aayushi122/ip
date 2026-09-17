@@ -138,7 +138,7 @@ public final class Parser {
         LocalDateTime from = DateTimeUtil.parseDateTime(fromText);
         LocalDateTime to = DateTimeUtil.parseDateTime(toSplit[1].trim());
         if (!to.isAfter(from)) {
-            throw new TodException("The /to date and time must be after /from.");
+            throw new TodException("I can't unlock time travel yet. Put the end after the start.");
         }
         return new Event(description, from, to);
     }

@@ -52,7 +52,7 @@ public class ToddTest {
         assertTrue(markedResponse.contains("[T][X] read JavaFX guide"));
         assertTrue(savedMarkedTask.contains("[T][X] read JavaFX guide"));
         assertTrue(deletedResponse.contains("read JavaFX guide"));
-        assertTrue(savedEmptyList.contains("Your list is empty"));
+        assertTrue(savedEmptyList.contains("I think the list is empty gang"));
     }
 
     @Test
@@ -127,7 +127,7 @@ public class ToddTest {
         Files.delete(dataPath.resolve("keep.txt"));
         Files.delete(dataPath);
         Files.move(backup, dataPath);
-        assertTrue(todd.getResponse("todo retry").contains("I've added"));
+        assertTrue(todd.getResponse("todo retry").contains("Another side quest? Okay, added:"));
         assertTrue(new Todd(dataPath).getResponse("list").contains("retry"));
         assertFalse(new Todd(dataPath).getResponse("list").contains("[T][ ] new"));
     }
@@ -146,7 +146,7 @@ public class ToddTest {
     public void formatForGui_taskReply_preservesTaskContent() {
         Ui ui = new Ui();
         String formatted = Ui.formatForGui(ui.formatAdded(new Todo("read ______ notes"), 1));
-        assertTrue(formatted.startsWith("Got it."));
+        assertTrue(formatted.startsWith("Another side quest? Okay, added:"));
         assertTrue(formatted.contains("[T][ ] read ______ notes"));
         assertFalse(formatted.contains("____________________________________________________________"));
         assertEquals("plain reply", Ui.formatForGui("plain reply"));
@@ -209,7 +209,7 @@ public class ToddTest {
         todd.getResponse("todo first");
         todd.getResponse("todo second");
         Response response = todd.getReply("unmark 2");
-        assertEquals("Task 2 is already unmarked.", Ui.formatForGui(response.text()));
+        assertEquals("Gang, I think task 2 is already unmarked.", Ui.formatForGui(response.text()));
         assertTrue(response.error());
     }
     @Test
@@ -223,12 +223,13 @@ public class ToddTest {
     @Test
     public void getResponse_emptyReminders_omitsUpcomingHeading() {
         Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
-        assertEquals("You have no upcoming deadlines or events.",
+        assertEquals("Nothing coming up. Its peaceful out here.",
                 Ui.formatForGui(todd.getResponse("reminders")));
         todd.getResponse("deadline report /by today");
-        assertTrue(todd.getResponse("reminders").contains("Upcoming incomplete deadlines and events from"));
+        assertTrue(todd.getResponse("reminders")
+                .contains("These deadlines are getting a little too close for comfort:"));
         todd.getResponse("mark 1");
-        assertEquals("You have no upcoming deadlines or events.",
+        assertEquals("Nothing coming up. Its peaceful out here.",
                 Ui.formatForGui(todd.getResponse("reminders")));
     }
 
@@ -246,10 +247,36 @@ public class ToddTest {
         Response goodbye = todd.getReply("  bye  ");
         assertTrue(goodbye.exit());
         assertFalse(goodbye.error());
-        assertTrue(goodbye.text().contains("See you soon"));
+        assertEquals("Nooo ok bye atb on making it out alive", goodbye.text());
         assertFalse(todd.getReply("bye extra").exit());
         assertTrue(todd.getReply("bye extra").error());
         assertFalse(todd.getReply("todo bye").exit());
         assertFalse(todd.getReply("hello").exit());
+    }
+    @Test
+    public void getResponse_personalityMessages_preserveTaskDetailsAndErrors() {
+        Todd todd = new Todd(tempDirectory.resolve("todd.txt"));
+        assertEquals("I think the list is empty gang, there's no way you have nothing to do.",
+                Ui.formatForGui(todd.getResponse("list")));
+        String added = Ui.formatForGui(todd.getResponse("todo read notes"));
+        assertTrue(added.startsWith("Another side quest? Okay, added:"));
+        assertTrue(added.contains("[T][ ] read notes"));
+        assertTrue(Ui.formatForGui(todd.getResponse("list")).startsWith("Here's the current survival plan:"));
+        String found = Ui.formatForGui(todd.getResponse("find notes"));
+        assertTrue(found.startsWith("Found these lurking in your quest log:"));
+        assertTrue(found.contains("read notes"));
+        assertEquals("Couldn't find it gang. Try something else.",
+                Ui.formatForGui(todd.getResponse("find missing")));
+        todd.getResponse("mark 1");
+        Response markedAgain = todd.getReply("mark 1");
+        assertTrue(markedAgain.error());
+        assertEquals("Gang, task 1 is already done. Take the win.", Ui.formatForGui(markedAgain.text()));
+        Response invalidEvent = todd.getReply("event study /from tomorrow /to today");
+        assertTrue(invalidEvent.error());
+        assertEquals("I can't unlock time travel yet. Put the end after the start.",
+                Ui.formatForGui(invalidEvent.text()));
+        String deleted = Ui.formatForGui(todd.getResponse("delete 1"));
+        assertTrue(deleted.startsWith("Quest abandoned. I saw nothing."));
+        assertTrue(deleted.contains("read notes"));
     }
 }

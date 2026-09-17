@@ -52,7 +52,7 @@ public class Ui {
 
     /** Returns Todd's goodbye message. */
     public String formatGoodbye() {
-        return "Noo don't go, come back. Ok fine bye. See you soon.";
+        return "Nooo ok bye atb on making it out alive";
     }
 
     /** Returns a concise guide to the commands Todd recognizes. */
@@ -110,10 +110,10 @@ public class Ui {
     /** Returns all tasks, or an empty-list message when there are none. */
     public String formatTaskList(List<Task> tasks) {
         if (tasks.isEmpty()) {
-            return surround("Your list is empty! Add some tasks first.");
+            return surround("I think the list is empty gang, there's no way you have nothing to do.");
         }
 
-        StringBuilder content = new StringBuilder("Here are the tasks in your list:");
+        StringBuilder content = new StringBuilder("Here's the current survival plan:");
         appendNumberedTasks(content, tasks);
         return surround(content.toString());
     }
@@ -131,7 +131,7 @@ public class Ui {
     /** Returns the added task and the updated total number of tasks. */
     public String formatAdded(Task task, int totalTasks) {
         return surround(
-                "Got it. I've added this task:",
+                "Another side quest? Okay, added:",
                 "   " + task,
                 "Now you have " + totalTasks + " tasks in the list.");
     }
@@ -139,7 +139,7 @@ public class Ui {
     /** Returns the deleted task and the updated total number of tasks. */
     public String formatDeleted(Task task, int totalTasks) {
         return surround(
-                "Noted. I've removed this task:",
+                "Quest abandoned. I saw nothing.",
                 "   " + task,
                 "Now you have " + totalTasks + " tasks in the list.");
     }
@@ -161,10 +161,10 @@ public class Ui {
     /** Returns tasks whose descriptions match a find command. */
     public String formatMatchingTasks(List<Task> matchingTasks) {
         if (matchingTasks.isEmpty()) {
-            return surround("There are no matching tasks in your list.");
+            return surround("Couldn't find it gang. Try something else.");
         }
 
-        StringBuilder content = new StringBuilder("Here are the matching tasks in your list:");
+        StringBuilder content = new StringBuilder("Found these lurking in your quest log:");
         appendNumberedTasks(content, matchingTasks);
         return surround(content.toString());
     }
@@ -173,10 +173,11 @@ public class Ui {
     public String formatReminders(LocalDate startDate, int numberOfDays,
                                   List<Task> tasks, List<Integer> taskNumbers) {
         if (taskNumbers.isEmpty()) {
-            return surround("You have no upcoming deadlines or events.");
+            return surround("Nothing coming up. Its peaceful out here.");
         }
         LocalDate endDate = startDate.plusDays(numberOfDays - 1L);
-        StringBuilder content = new StringBuilder("Upcoming incomplete deadlines and events from ")
+        StringBuilder content = new StringBuilder("These deadlines are getting a little too close for comfort:\n")
+                .append("Deadlines and events from ")
                 .append(DateTimeUtil.format(startDate))
                 .append(" to ")
                 .append(DateTimeUtil.format(endDate))
