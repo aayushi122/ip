@@ -10,7 +10,7 @@ through a chat window.
 ## Quick start
 
 1. Install **Java 25**. Run `java -version` in a terminal to check your version.
-2. Download the application JAR from [Todd's releases](https://github.com/aayushi122/ip/releases)
+2. Download [todd.jar (v0.2)](https://github.com/aayushi122/ip/releases/download/v0.2/todd.jar)
    and put it in a folder where you can save files.
 3. Open a terminal in that folder and run:
 
