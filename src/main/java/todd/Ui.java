@@ -76,7 +76,7 @@ public class Ui {
                 "list — Show all your tasks and their numbers.",
                 "find <keyword> — Search task descriptions. Example: find notes",
                 "on <date> — Show deadlines and events on a date. Example: on tomorrow",
-                "reminders — Show unfinished deadlines and events over the next 7 days.",
+                "reminders — Show unfinished deadlines and events for today and the next 6 days.",
                 "",
                 "UPDATE TASKS",
                 "mark <task number> — Mark a task done. Example: mark 1",
@@ -183,7 +183,7 @@ public class Ui {
                 .append(DateTimeUtil.format(startDate))
                 .append(" to ")
                 .append(DateTimeUtil.format(endDate))
-                .append(":");
+                .append(" (both dates included):");
         for (int taskNumber : taskNumbers) {
             content.append("\n ").append(taskNumber).append(".").append(tasks.get(taskNumber - 1));
         }

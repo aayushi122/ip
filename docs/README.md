@@ -27,6 +27,11 @@ You can resize the window and scroll through the conversation.
 
 ## Add tasks
 
+Todd rejects duplicates of the same task type with an identical description and dates/times,
+even if the existing task is completed. Descriptions are case-sensitive; leading and trailing
+spaces are ignored. Deadlines with different due times and events with different start or end
+times are separate tasks. Delete the existing task first if you want to add it again.
+
 ### Todo — a task without a date
 **Format:** `todo <description>`
 **Example:** `todo Read notes`
@@ -73,7 +78,13 @@ Both the start and end dates of an event are included. Todos have no date and ar
 
 **Command/example:** `reminders`
 
-Shows unfinished deadlines and events from **today through six days after today**, inclusive.
+Shows unfinished deadlines and events for **today and the next 6 days**: seven calendar dates in total.
+Today counts as day one, and both ends of the displayed date range are included.
+
+For example, on **18 September 2026**, reminders covers **18–24 September 2026**.
+A deadline on **25 September** (exactly seven days from today) is outside that range;
+it will appear when you run `reminders` on 19 September, provided it is still unfinished.
+This is a calendar-date window, not a rolling 168-hour period.
 
 ## Update tasks
 

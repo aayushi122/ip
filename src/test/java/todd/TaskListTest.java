@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 /** Tests the state-changing and date-search operations in {@link TaskList}. */
 public class TaskListTest {
     @Test
-    public void addAndDelete_tasks_updatesListAndReturnsDeletedTask() {
+    public void addAndDelete_tasks_updatesListAndReturnsDeletedTask() throws TodException {
         TaskList taskList = new TaskList();
         Todo firstTask = new Todo("read book");
         Todo secondTask = new Todo("write report");
@@ -143,5 +143,61 @@ public class TaskListTest {
         List<Integer> result = taskList.findUpcomingTaskNumbers(startDate, 7);
 
         assertEquals(List.of(2, 3, 5), result);
+    }
+    @Test
+    public void add_duplicateDetails_rejectsEachTypeRegardlessOfCompletion() throws TodException {
+        LocalDateTime start = LocalDateTime.of(2026, 9, 18, 14, 0);
+        Task[] originals = {new Todo("study"), new Deadline("study", start),
+            new Event("study", start, start.plusHours(1))};
+        Task[] duplicates = {new Todo("study"), new Deadline("study", start),
+            new Event("study", start, start.plusHours(1))};
+        String[] types = {"task", "deadline", "event"};
+        for (int i = 0; i < originals.length; i++) {
+            TaskList list = new TaskList();
+            list.add(originals[i]);
+            Task duplicate = duplicates[i];
+            String expected = "Wait, that " + types[i] + " is already in the list.";
+            assertEquals(expected, assertThrows(TodException.class, () -> list.add(duplicate)).getMessage());
+            list.mark(0);
+            assertEquals(expected, assertThrows(TodException.class, () -> list.add(duplicate)).getMessage());
+            assertEquals(1, list.size());
+            assertSame(originals[i], list.asList().get(0));
+            assertTrue(originals[i].isDone());
+        }
+    }
+
+    @Test
+    public void add_distinctTypesDescriptionsOrTimes_allowsSeparateTasks() throws TodException {
+        LocalDateTime start = LocalDateTime.of(2026, 9, 18, 14, 0);
+        TaskList list = new TaskList();
+        list.add(new Todo("study"));
+        list.add(new Todo("Study"));
+        list.add(new Todo("study notes"));
+        list.add(new Deadline("study", start));
+        list.add(new Deadline("study", start.plusHours(1)));
+        list.add(new Event("study", start, start.plusHours(2)));
+        list.add(new Event("study", start.plusHours(1), start.plusHours(2)));
+        list.add(new Event("study", start, start.plusHours(3)));
+        assertEquals(8, list.size());
+    }
+
+    @Test
+    public void add_deletedTask_allowsAddingItAgain() throws TodException {
+        TaskList list = new TaskList();
+        list.add(new Todo("study"));
+        list.delete(0);
+        list.add(new Todo("study"));
+        assertEquals(1, list.size());
+    }
+    @Test
+    public void findUpcomingTaskNumbers_sevenDateWindow_excludesExactlySevenDaysLater() {
+        LocalDate today = LocalDate.of(2026, 9, 18);
+        TaskList list = new TaskList(List.of(
+                new Deadline("today", today.atStartOfDay()),
+                new Deadline("last included minute", today.plusDays(6).atTime(23, 59)),
+                new Deadline("seven days later", today.plusDays(7).atStartOfDay()),
+                new Event("later event", today.plusDays(7).atTime(10, 0), today.plusDays(7).atTime(11, 0))));
+        assertEquals(List.of(1, 2), list.findUpcomingTaskNumbers(today, 7));
+        assertEquals(List.of(2, 3, 4), list.findUpcomingTaskNumbers(today.plusDays(1), 7));
     }
 }

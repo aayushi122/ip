@@ -183,7 +183,7 @@ public class Todd {
         return ui.formatMatchingTasks(tasks.asList(), tasks.findTaskNumbers(keyword));
     }
 
-    /** Shows incomplete deadlines and events occurring during the next seven days. */
+    /** Shows incomplete deadlines and events for today and the next six days, inclusive. */
     private String showReminders() {
         LocalDate startDate = LocalDate.now();
         List<Integer> taskNumbers = tasks.findUpcomingTaskNumbers(startDate, REMINDER_WINDOW_DAYS);

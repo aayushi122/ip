@@ -29,10 +29,33 @@ public class TaskList {
         return List.copyOf(tasks);
     }
 
-    /** Adds the specified task to the end of the list. */
-    public void add(Task task) {
+    /** Adds a task only when its type, description, and dates do not match an existing task. */
+    public void add(Task task) throws TodException {
         assert task != null : "task to add must not be null";
+        for (Task existing : tasks) {
+            if (hasSameDetails(existing, task)) {
+                String type = task instanceof Deadline ? "deadline" : task instanceof Event ? "event" : "task";
+                throw new TodException("Wait, that " + type + " is already in the list.");
+            }
+        }
         tasks.add(task);
+    }
+
+    /** Compares stored task details exactly, ignoring whether either task is completed. */
+    private boolean hasSameDetails(Task first, Task second) {
+        if (first.getClass() != second.getClass() || !first.getDescription().equals(second.getDescription())) {
+            return false;
+        }
+        if (first instanceof Deadline) {
+            return ((Deadline) first).getBy().equals(((Deadline) second).getBy());
+        }
+        if (first instanceof Event) {
+            Event firstEvent = (Event) first;
+            Event secondEvent = (Event) second;
+            return firstEvent.getFrom().equals(secondEvent.getFrom())
+                    && firstEvent.getTo().equals(secondEvent.getTo());
+        }
+        return true;
     }
 
     /** Removes and returns the task at the specified zero-based index. */
@@ -91,7 +114,7 @@ public class TaskList {
     }
 
     /**
-     * Finds incomplete deadlines and events occurring within an inclusive date window.
+     * Finds incomplete deadlines and events within numberOfDays calendar dates, counting startDate as day one.
      * Original one-based task numbers are returned for use with other commands.
      */
     public List<Integer> findUpcomingTaskNumbers(LocalDate startDate, int numberOfDays) {

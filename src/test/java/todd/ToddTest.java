@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -336,5 +338,39 @@ public class ToddTest {
         assertTrue(todd.getWelcomeMessage().contains("couldn't load"));
         assertTrue(todd.getReply("todo new task").error());
         assertEquals("keep", Files.readString(existingFile));
+    }
+    @Test
+    public void getReply_duplicateTasksAfterReload_returnsErrorsAndPreservesSave() throws IOException {
+        Path dataPath = tempDirectory.resolve("todd.txt");
+        Todd todd = new Todd(dataPath);
+        String[] commands = {"todo study", "deadline report /by 2026-09-18",
+            "event meeting /from 2026-09-18 1400 /to 2026-09-18 1500"};
+        String[] duplicates = {"  todo study  ", "deadline report /by 2026-09-18 0000",
+            "event meeting /from 2026-09-18 1400 /to 2026-09-18 1500"};
+        String[] types = {"task", "deadline", "event"};
+        for (String command : commands) {
+            assertFalse(todd.getReply(command).error());
+        }
+        todd.getResponse("mark 1");
+        String saved = Files.readString(dataPath);
+        Todd reopened = new Todd(dataPath);
+        String originalList = reopened.getResponse("list");
+        for (int i = 0; i < duplicates.length; i++) {
+            Response response = reopened.getReply(duplicates[i]);
+            assertTrue(response.error());
+            assertEquals("Wait, that " + types[i] + " is already in the list.",
+                    Ui.formatForGui(response.text()));
+            assertEquals(saved, Files.readString(dataPath));
+            assertEquals(originalList, reopened.getResponse("list"));
+        }
+    }
+    @Test
+    public void formatReminders_dateRangeAndHelp_explainInclusiveCalendarDates() {
+        Ui ui = new Ui();
+        LocalDate today = LocalDate.of(2026, 9, 18);
+        String response = ui.formatReminders(today, 7,
+                List.of(new Deadline("report", today.atTime(18, 0))), List.of(1));
+        assertTrue(response.contains("Sep 18 2026 to Sep 24 2026 (both dates included)"));
+        assertTrue(ui.formatHelp().contains("today and the next 6 days"));
     }
 }
